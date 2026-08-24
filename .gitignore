@@ -1,0 +1,24 @@
+# 依赖
+node_modules/
+miniprogram_npm/
+
+# 环境变量 / 密钥（严禁提交）
+.env
+.env.local
+cloudfunctions/*/config.env.js
+
+# 云函数依赖
+cloudfunctions/*/node_modules/
+
+# 编译产物
+*.tsbuildinfo
+typings/auto/
+
+# 系统
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 录音临时文件
+*.tmp
