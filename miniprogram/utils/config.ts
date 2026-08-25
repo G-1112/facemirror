@@ -1,0 +1,27 @@
+/**
+ * 全局配置。
+ * 提交前务必填写 CLOUD_ENV（云开发环境 ID）。
+ */
+
+// 云开发环境 ID；留空则使用「默认环境」。正式提交需填写实际环境 ID。
+export const CLOUD_ENV = "";
+
+// 场景定义（对应 FR-02 三类场景）
+export interface SceneDef {
+  key: string;
+  label: string;
+  desc: string;
+  icon: string;
+}
+
+export const SCENES: SceneDef[] = [
+  { key: "interview", label: "模拟面试", desc: "求职面试演练", icon: "🎤" },
+  { key: "defense", label: "答辩预演", desc: "开题/毕业答辩", icon: "🎓" },
+  { key: "presentation", label: "课堂展示", desc: "课堂/竞赛路演", icon: "📣" },
+];
+
+// 录音时限选项（分钟）
+export const DURATION_OPTIONS = [1, 3, 5];
+
+// 内容安全：是否启用 msgSecCheck（默认开启，审核硬性要求）
+export const ENABLE_SECURITY_CHECK = true;
