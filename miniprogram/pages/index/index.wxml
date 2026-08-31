@@ -1,0 +1,46 @@
+<view class="container">
+  <view class="hero">
+    <view class="hero-title">面镜</view>
+    <view class="hero-sub">对着手机说 3 分钟，60 秒内拿到能力雷达图</view>
+  </view>
+
+  <!-- 场景选择 -->
+  <view class="section-title">选择练习场景</view>
+  <view class="scene-grid">
+    <view
+      wx:for="{{scenes}}"
+      wx:key="key"
+      class="scene-card {{scene === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onSceneTap"
+    >
+      <view class="scene-icon">{{item.icon}}</view>
+      <view class="scene-label">{{item.label}}</view>
+      <view class="scene-desc">{{item.desc}}</view>
+    </view>
+  </view>
+
+  <!-- 模式选择 -->
+  <view class="section-title">出题方式</view>
+  <view class="mode-list">
+    <view
+      class="mode-card {{mode === 'random' ? 'active' : ''}}"
+      data-mode="random"
+      bindtap="onModeTap"
+    >
+      <view class="mode-title">随机抽题</view>
+      <view class="mode-desc">从内置题库抽取一道题</view>
+    </view>
+    <view
+      class="mode-card {{mode === 'custom' ? 'active' : ''}}"
+      data-mode="custom"
+      bindtap="onModeTap"
+    >
+      <view class="mode-title">自定义出题 ✨</view>
+      <view class="mode-desc">上传简历/论文，AI 生成针对你的追问</view>
+    </view>
+  </view>
+
+  <button class="btn-primary start-btn" bindtap="onStart">开始练习</button>
+  <view class="history-link" bindtap="onHistory">查看历史记录 →</view>
+</view>

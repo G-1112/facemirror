@@ -1,0 +1,36 @@
+<view class="container">
+  <!-- 自定义出题：上传材料 -->
+  <view wx:if="{{mode === 'custom'}}" class="card upload-card" bindtap="onUploadMaterial">
+    <view class="upload-icon">📄</view>
+    <view wx:if="{{!uploading}}">
+      <view class="upload-title">上传你的简历 / 项目文档 / 论文摘要</view>
+      <view class="upload-desc">AI 会像评委一样，针对你的材料生成追问</view>
+    </view>
+    <view wx:else>
+      <view class="upload-title">正在解析「{{materialName}}」并生成追问…</view>
+    </view>
+  </view>
+
+  <!-- 自定义出题：生成的问题列表 -->
+  <view wx:if="{{mode === 'custom' && questions.length}}" class="section-title">AI 生成的追问</view>
+  <view
+    wx:for="{{questions}}"
+    wx:key="index"
+    class="card q-option {{question === item.question ? 'active' : ''}}"
+    data-index="{{index}}"
+    bindtap="onPickQuestion"
+  >
+    <view class="q-text">{{item.question}}</view>
+    <view class="q-meta">难度：{{item.difficulty}} · 考察：{{item.target}}</view>
+  </view>
+
+  <!-- 当前题目 -->
+  <view class="section-title">当前题目</view>
+  <view class="card current-question">
+    <view class="q-text">{{question}}</view>
+  </view>
+
+  <button wx:if="{{mode === 'random'}}" class="btn-ghost change-btn" bindtap="onChange">换一题</button>
+
+  <button class="btn-primary start-btn" bindtap="onGo" disabled="{{!question}}">去作答</button>
+</view>

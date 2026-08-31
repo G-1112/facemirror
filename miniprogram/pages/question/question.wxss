@@ -1,0 +1,54 @@
+.upload-card {
+  text-align: center;
+  padding: 40rpx 24rpx;
+  border: 3rpx dashed #cbd5e1;
+  background: #fff;
+}
+.upload-icon {
+  font-size: 64rpx;
+}
+.upload-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-top: 8rpx;
+}
+.upload-desc {
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-top: 4rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 24rpx 0 16rpx;
+  color: #374151;
+}
+
+.q-option {
+  border: 3rpx solid transparent;
+}
+.q-option.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.q-text {
+  font-size: 30rpx;
+  line-height: 1.6;
+}
+.q-meta {
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-top: 8rpx;
+}
+
+.current-question {
+  border-left: 8rpx solid #2563eb;
+}
+
+.change-btn {
+  margin-bottom: 20rpx;
+}
+.start-btn {
+  width: 100%;
+}

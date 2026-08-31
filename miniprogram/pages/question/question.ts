@@ -1,0 +1,85 @@
+// 出题页：随机抽题 / 自定义出题（上传材料 → AI 生成追问）
+import { genQuestions, getQuestions } from "../../utils/api";
+
+Page({
+  data: {
+    scene: "interview",
+    mode: "random",
+    loading: false,
+    question: "",
+    questions: [] as any[],
+    uploading: false,
+    materialName: "",
+  },
+
+  onLoad(query: Record<string, string>) {
+    const scene = query.scene || "interview";
+    const mode = query.mode || "random";
+    this.setData({ scene, mode });
+    if (mode === "random") this.loadRandom();
+    else this.setData({ loading: false });
+  },
+
+  async loadRandom() {
+    this.setData({ loading: true });
+    try {
+      const { questions } = await getQuestions({ scene: this.data.scene, limit: 1 });
+      if (questions && questions.length) {
+        this.setData({ question: questions[0].text });
+      } else {
+        this.setData({ question: "（题库为空，请先导入题目到 questions 集合）" });
+      }
+    } catch (e) {
+      wx.showToast({ title: "加载失败", icon: "none" });
+    } finally {
+      this.setData({ loading: false });
+    }
+  },
+
+  onChange() {
+    this.loadRandom();
+  },
+
+  // 自定义出题：选择材料文件
+  onUploadMaterial() {
+    wx.chooseMessageFile({
+      count: 1,
+      type: "file",
+      extension: ["txt", "md", "docx", "pdf"],
+      success: async (res) => {
+        const file = res.tempFiles[0];
+        this.setData({ uploading: true, materialName: file.name });
+        wx.showLoading({ title: "AI 生成追问中" });
+        try {
+          const upload = await wx.cloud.uploadFile({
+            cloudPath: `materials/${Date.now()}-${file.name}`,
+            filePath: file.path,
+          });
+          const { questions } = await genQuestions({
+            fileID: upload.fileID,
+            scene: this.data.scene,
+          });
+          const list = (questions || []).map((q, i) => ({ ...q, index: i }));
+          this.setData({ questions: list, question: list[0] ? list[0].question : "" });
+        } catch (e: any) {
+          wx.showToast({ title: e.message || "出题失败", icon: "none" });
+        } finally {
+          wx.hideLoading();
+          this.setData({ uploading: false });
+        }
+      },
+    });
+  },
+
+  onPickQuestion(e: WechatMiniprogram.TouchEvent) {
+    const q = this.data.questions[e.currentTarget.dataset.index as number];
+    this.setData({ question: q.question });
+  },
+
+  onGo() {
+    if (!this.data.question) return;
+    wx.navigateTo({
+      url: `/pages/record/record?scene=${this.data.scene}&question=${encodeURIComponent(this.data.question)}`,
+    });
+  },
+});

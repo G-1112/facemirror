@@ -1,0 +1,87 @@
+.hero {
+  text-align: center;
+  padding: 40rpx 0 24rpx;
+}
+.hero-title {
+  font-size: 56rpx;
+  font-weight: 700;
+  background: linear-gradient(90deg, #2563eb, #7c3aed);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+.hero-sub {
+  margin-top: 8rpx;
+  color: #6b7280;
+  font-size: 26rpx;
+}
+
+.section-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin: 24rpx 0 16rpx;
+  color: #374151;
+}
+
+.scene-grid {
+  display: flex;
+  gap: 20rpx;
+}
+.scene-card {
+  flex: 1;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx 16rpx;
+  text-align: center;
+  border: 3rpx solid transparent;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.scene-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.scene-icon {
+  font-size: 48rpx;
+}
+.scene-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-top: 8rpx;
+}
+.scene-desc {
+  font-size: 22rpx;
+  color: #6b7280;
+  margin-top: 4rpx;
+}
+
+.mode-card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  border: 3rpx solid transparent;
+}
+.mode-card.active {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+.mode-title {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+.mode-desc {
+  font-size: 24rpx;
+  color: #6b7280;
+  margin-top: 4rpx;
+}
+
+.start-btn {
+  margin-top: 32rpx;
+  width: 100%;
+}
+
+.history-link {
+  text-align: center;
+  color: #2563eb;
+  font-size: 26rpx;
+  margin-top: 24rpx;
+}
