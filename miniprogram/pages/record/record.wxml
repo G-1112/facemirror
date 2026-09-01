@@ -1,0 +1,47 @@
+<view class="container">
+  <!-- 题目 -->
+  <view class="card question-card">
+    <view class="q-label">题目</view>
+    <view class="q-text">{{question}}</view>
+  </view>
+
+  <!-- 时长选择 -->
+  <view class="section-title">作答时长</view>
+  <view class="duration-row">
+    <view
+      wx:for="{{durationOptions}}"
+      wx:key="*this"
+      class="duration-chip {{duration === item ? 'active' : ''}}"
+      data-d="{{item}}"
+      bindtap="onPickDuration"
+    >{{item}} 分钟</view>
+  </view>
+
+  <!-- 录音区 -->
+  <view wx:if="{{status === 'idle' || status === 'paused' || status === 'recording'}}" class="record-area">
+    <view wx:if="{{status !== 'idle'}}" class="countdown">{{formatTime(remaining)}}</view>
+    <view class="record-btn {{status === 'recording' ? 'recording' : ''}}" bindtap="{{status === 'recording' ? 'onPause' : (status === 'paused' ? 'onResume' : 'onStartRecord')}}">
+      {{status === 'recording' ? '⏸ 暂停' : (status === 'paused' ? '▶️ 继续' : '🎙 开始作答')}}
+    </view>
+    <button wx:if="{{status !== 'idle'}}" class="btn-ghost stop-btn" bindtap="onStop">结束作答</button>
+  </view>
+
+  <!-- 处理中 -->
+  <view wx:if="{{status === 'uploading' || status === 'transcribing'}}" class="card processing">
+    <view class="processing-text">{{status === 'uploading' ? '上传录音中…' : '语音识别中…'}}</view>
+    <view class="muted">录音结束到报告生成通常不超过 60 秒</view>
+  </view>
+
+  <!-- 人工修正转写 -->
+  <view wx:if="{{showEditor && status === 'editing'}}" class="card">
+    <view class="section-title">确认转写文本（可修正）</view>
+    <textarea
+      class="transcript-editor"
+      value="{{transcript}}"
+      placeholder="未配置语音识别，请手动粘贴/输入你的作答内容"
+      bindinput="onTranscriptInput"
+      maxlength="5000"
+    ></textarea>
+    <button class="btn-primary" bindtap="onConfirmTranscript">确认并生成报告</button>
+  </view>
+</view>

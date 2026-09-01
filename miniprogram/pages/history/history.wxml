@@ -1,0 +1,24 @@
+<view class="container">
+  <view wx:if="{{!list.length && !loading}}" class="empty">
+    <view class="empty-icon">📭</view>
+    <view>还没有练习记录，去练一道吧</view>
+  </view>
+
+  <view
+    wx:for="{{list}}"
+    wx:key="_id"
+    class="card history-item"
+    data-id="{{item._id}}"
+    bindtap="onTapItem"
+  >
+    <view class="history-top">
+      <view class="history-scene">{{item.sceneLabel}}</view>
+      <view class="history-score">{{item.score}} 分</view>
+    </view>
+    <view class="history-question">{{item.questionText}}</view>
+    <view class="history-date">{{item.dateLabel}}</view>
+  </view>
+
+  <view wx:if="{{loading}}" class="muted load-more">加载中…</view>
+  <view wx:if="{{!hasMore && list.length}}" class="muted load-more">没有更多了</view>
+</view>

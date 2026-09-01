@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "评估报告",
+  "usingComponents": {
+    "radar-chart": "/components/radar-chart/radar-chart",
+    "sentence-note": "/components/sentence-note/sentence-note",
+    "share-poster": "/components/share-poster/share-poster"
+  }
+}
