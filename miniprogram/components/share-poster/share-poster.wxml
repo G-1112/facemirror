@@ -1,0 +1,4 @@
+<view class="poster-wrap">
+  <canvas type="2d" id="poster" class="poster-canvas"></canvas>
+  <button class="save-btn" bindtap="save" disabled="{{saving}}">{{saving ? '生成中…' : '保存海报到相册'}}</button>
+</view>

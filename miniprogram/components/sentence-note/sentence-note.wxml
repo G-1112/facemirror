@@ -1,0 +1,5 @@
+<view class="note">
+  <view class="note-sentence">「{{note.sentence}}」</view>
+  <view class="note-row"><text class="note-tag issue">问题</text>{{note.issue}}</view>
+  <view class="note-row"><text class="note-tag sug">建议</text>{{note.suggestion}}</view>
+</view>
