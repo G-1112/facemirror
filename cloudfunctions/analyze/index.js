@@ -56,11 +56,22 @@ function mockEval(transcript) {
 }
 
 exports.main = async (event) => {
+  const { OPENID } = cloud.getWXContext();
   const { recordId } = event;
-  if (!recordId) return { error: "缺少 recordId" };
+  if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
-  const doc = await db.collection("practices").doc(recordId).get();
-  const p = doc.data;
+  // 归属校验（审计修复 B-01）：LLM 评估是计费接口，未校验归属会被用来刷他人记录
+  const owned = await db
+    .collection("practices")
+    .where({ _id: recordId, openid: OPENID })
+    .limit(1)
+    .get();
+  if (!owned.data.length) return { error: "记录不存在或无访问权限" };
+
+  const p = owned.data[0];
+  // 幂等：已出报告直接返回，避免重复调用 LLM
+  if (p.status === "done" && p.report) return { status: "done", report: p.report };
+
   const transcript = (p.transcript || "").trim();
   if (!transcript) return { error: "转写文本为空，请先完成语音识别或手动输入" };
 

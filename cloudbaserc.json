@@ -1,0 +1,95 @@
+{
+  "version": "2.0",
+  "envId": "{{envId}}",
+  "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
+  "framework": {
+    "name": "facemirror",
+    "plugins": {
+      "node": {
+        "use": "@cloudbase/framework-plugin-node",
+        "inputs": {
+          "entry": "cloudfunctions",
+          "path": "/facemirror",
+          "name": "facemirror",
+          "projectPath": "./cloudfunctions",
+          "functionOptions": {
+            "timeout": 60,
+            "memorySize": 256
+          }
+        }
+      }
+    }
+  },
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    {
+      "name": "asr",
+      "timeout": 60,
+      "memorySize": 256,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "analyze",
+      "timeout": 60,
+      "memorySize": 256,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "submitPractice",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "getPractice",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "getHistory",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "updateTranscript",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "finalize",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "genQuestions",
+      "timeout": 30,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "getQuestions",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "login",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    },
+    {
+      "name": "checkContent",
+      "timeout": 20,
+      "installDependency": true,
+      "handler": "index.main"
+    }
+  ],
+  "region": "ap-shanghai"
+}

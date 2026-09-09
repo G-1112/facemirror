@@ -7,6 +7,57 @@ const db = cloud.database();
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 每日配额（审计修复 B-03）：ASR 与 LLM 都是计费接口，必须按 openid 限流
+const DAILY_LIMIT = 20;
+
+function todayKey() {
+  const d = new Date(Date.now() + 8 * 3600 * 1000); // 按东八区计日
+  return d.toISOString().slice(0, 10);
+}
+
+/** 检查并占用一次配额；quota 集合需建 { _id, openid, date, count } */
+async function checkQuota(openid) {
+  try {
+    const { date } = { date: todayKey() };
+    const q = await db.collection("quota").where({ openid, date }).limit(1).get();
+    const used = q.data.length ? q.data[0].count || 0 : 0;
+    if (used >= DAILY_LIMIT) {
+      return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
+    }
+    if (q.data.length) {
+      await db.collection("quota").doc(q.data[0]._id).update({ data: { count: used + 1 } });
+    } else {
+      await db.collection("quota").add({ data: { openid, date, count: 1 } });
+    }
+    return { ok: true };
+  } catch (e) {
+    // 配额表未创建时不阻塞主流程，但记日志便于排查
+    console.warn("quota check failed:", e.message);
+    return { ok: true };
+  }
+}
+
+/** 服务端内容安全检测：违规或接口异常都拒绝落库（fail-close） */
+async function assertSafe(text) {
+  if (!text || !text.trim()) return;
+  let risky = false;
+  let unavailable = false;
+  try {
+    const res = await cloud.openapi.security.msgSecCheck({
+      content: text.slice(0, 2500),
+      version: 2,
+      scene: 2,
+      openid: cloud.getWXContext().OPENID,
+    });
+    const suggest = res && res.result && res.result.suggest;
+    risky = suggest === "risky";
+  } catch (e) {
+    unavailable = true;
+  }
+  if (risky) throw new Error("内容包含违规信息，请修改后重试");
+  if (unavailable) throw new Error("内容安全检测暂不可用，请稍后重试");
+}
+
 /** 把 fileID 转为临时可访问 URL */
 async function getFileUrl(fileID) {
   const res = await cloud.getTempFileURL({ fileList: [fileID] });
@@ -14,20 +65,36 @@ async function getFileUrl(fileID) {
   return item && item.tempFileURL;
 }
 
-/** 腾讯云 ASR 录音文件识别：创建任务 → 轮询 → 取结果 */
-async function tencentAsr(url) {
+/**
+ * 腾讯云 ASR 录音文件识别。
+ *
+ * 修复（审计 B-04）：原实现在单次云函数调用内轮询最多 25s，而云函数默认超时 20s，
+ * 长音频必然被强杀、结果丢失。改为两段式：
+ *   1. 首次调用：创建任务，把 TaskId 存进记录，只做短轮询（≤ POLL_BUDGET_MS）；
+ *   2. 未完成时返回 asr_running，客户端轮询再次进入本函数，复用已有 TaskId 续查，
+ *      不会重复创建任务（避免重复计费）。
+ * 同时在 config.json 声明 60s 超时兜底。
+ */
+const POLL_INTERVAL_MS = 2000;
+const POLL_BUDGET_MS = 12000; // 预留时间给创建任务与写库，避免撞 20s 默认超时
+
+function asrClient() {
   const secretId = process.env.TENCENT_SECRET_ID;
   const secretKey = process.env.TENCENT_SECRET_KEY;
   if (!secretId || !secretKey) return null;
-
   const tencentcloud = require("tencentcloud-sdk-nodejs-asr");
   const AsrClient = tencentcloud.asr.v20190614.Client;
-  const client = new AsrClient({
+  return new AsrClient({
     credential: { secretId, secretKey },
     region: "ap-guangzhou",
     profile: { httpProfile: { endpoint: "asr.tencentcloudapi.com" } },
   });
+}
 
+/** 创建识别任务，返回 TaskId */
+async function createAsrTask(url) {
+  const client = asrClient();
+  if (!client) return null;
   const createRes = await client.CreateRecTask({
     EngineModelType: "16k_zh",
     ChannelNum: 1,
@@ -37,16 +104,22 @@ async function tencentAsr(url) {
   });
   const taskId = createRes.Data && createRes.Data.TaskId;
   if (!taskId) throw new Error("ASR 创建任务失败");
+  return taskId;
+}
 
-  // 轮询结果，最多约 25s
-  for (let i = 0; i < 12; i++) {
-    await sleep(2000);
+/** 在预算时间内轮询任务状态：返回 { done, result } */
+async function pollAsrTask(taskId, budgetMs = POLL_BUDGET_MS) {
+  const client = asrClient();
+  if (!client) throw new Error("ASR 客户端不可用");
+  const deadline = Date.now() + budgetMs;
+  while (Date.now() < deadline) {
+    await sleep(POLL_INTERVAL_MS);
     const statusRes = await client.DescribeTaskStatus({ TaskId: taskId });
     const status = statusRes.Data && statusRes.Data.Status;
-    if (status === 2) return statusRes.Data.Result; // 成功
+    if (status === 2) return { done: true, result: statusRes.Data.Result }; // 成功
     if (status === 3) throw new Error("ASR 识别失败");
   }
-  throw new Error("ASR 识别超时");
+  return { done: false, result: null }; // 尚未完成，交给客户端下次续查
 }
 
 /** 解析 ASR 结果 → { transcript, sentences } */
@@ -86,30 +159,64 @@ function parseAsrResult(result) {
 }
 
 exports.main = async (event) => {
+  const { OPENID } = cloud.getWXContext();
   const { recordId } = event;
-  if (!recordId) return { error: "缺少 recordId" };
+  if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
-  const doc = await db.collection("practices").doc(recordId).get();
-  const p = doc.data;
+  // 归属校验（审计修复 B-01）：ASR 是计费接口，未校验归属会被用来刷别人的记录烧钱
+  const owned = await db
+    .collection("practices")
+    .where({ _id: recordId, openid: OPENID })
+    .limit(1)
+    .get();
+  if (!owned.data.length) return { error: "记录不存在或无访问权限" };
+
+  const p = owned.data[0];
+  // 配额校验（审计修复 B-03）：按 openid 限流，防止计费接口被无限调用
+  const quota = await checkQuota(OPENID);
+  if (!quota.ok) return { error: quota.reason };
+
   if (!p.audioFileID) return { error: "缺少音频文件" };
+
+  // 已完成识别的记录直接返回结果，避免重复创建任务（重复计费）
+  if (p.status === "asr_done" || p.status === "done" || p.status === "analyzing") {
+    return { status: p.status, transcript: p.transcript || "", needManual: !!p.needManual };
+  }
 
   let transcript = "";
   let sentences = [];
   let needManual = false;
 
   try {
-    const url = await getFileUrl(p.audioFileID);
-    const result = await tencentAsr(url);
-    if (result) {
+    // 复用已有任务 ID（续查），否则创建新任务
+    let taskId = p.asrTaskId;
+    if (!taskId) {
+      const url = await getFileUrl(p.audioFileID);
+      taskId = await createAsrTask(url);
+      if (!taskId) {
+        // 未配置腾讯云凭证 → mock：空转写，走人工输入
+        needManual = true;
+      } else {
+        await db.collection("practices").doc(recordId).update({ data: { asrTaskId: taskId } });
+      }
+    }
+
+    if (taskId) {
+      const { done, result } = await pollAsrTask(taskId);
+      if (!done) {
+        // 本轮预算用尽，保持 pending，由客户端轮询续查（不重复计费）
+        return { status: "asr_running", needManual: false };
+      }
       const parsed = parseAsrResult(result);
       transcript = parsed.transcript;
       sentences = parsed.sentences;
-    } else {
-      // 未配置腾讯云凭证 → mock：空转写，走人工输入
-      needManual = true;
+      // 内容安全（审计修复 B-02）：ASR 结果落库前必须过检测
+      await assertSafe(transcript);
     }
   } catch (e) {
     console.warn("ASR failed:", e.message);
+    // 内容违规 / 内容安全不可用：不落库，直接回传原因
+    if (/违规|内容安全/.test(e.message)) return { error: e.message };
     needManual = true;
   }
 
