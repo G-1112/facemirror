@@ -4,6 +4,8 @@ const cloud = require("wx-server-sdk");
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
+// 原子更新指令（_.inc 等），用于并发安全的配额自增（第三轮 B-09）
+const _ = db.command;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -25,13 +27,21 @@ async function checkQuota(openid) {
       return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
     }
     if (q.data.length) {
-      await db.collection("quota").doc(q.data[0]._id).update({ data: { count: used + 1 } });
+      // 原子自增（第三轮 B-09）：原实现「先读 count 再写 count+1」存在竞态，
+      // 并发请求都读到旧值即可突破每日上限。改用 _.inc 原子自增，
+      // 自增后校验是否超额，超额则原子回滚并拒绝。
+      await db.collection("quota").doc(q.data[0]._id).update({ data: { count: _.inc(1) } });
+      const after = await db.collection("quota").doc(q.data[0]._id).get();
+      if ((after.data.count || 0) > DAILY_LIMIT) {
+        await db.collection("quota").doc(q.data[0]._id).update({ data: { count: _.inc(-1) } });
+        return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
+      }
     } else {
       await db.collection("quota").add({ data: { openid, date, count: 1 } });
     }
     return { ok: true };
   } catch (e) {
-    // 配额表未创建时不阻塞主流程，但记日志便于排查
+    // 配额异常时保守放行（避免表未创建导致主流程完全不可用），但记日志
     console.warn("quota check failed:", e.message);
     return { ok: true };
   }

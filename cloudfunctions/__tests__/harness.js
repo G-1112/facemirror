@@ -1,0 +1,166 @@
+/**
+ * 云函数本地测试桩：mock `wx-server-sdk`，让云函数逻辑可在 Node 中直接单测。
+ *
+ * 用法：
+ *   const { loadFunction, resetMocks } = require("./harness");
+ *   const fn = loadFunction("submitPractice", { OPENID: "o1" });
+ *   const res = await fn({ scene: "interview", questionText: "x" });
+ *
+ * 设计：不依赖任何第三方测试框架，用 node:assert 即可断言，保证离线可复现。
+ */
+const path = require("path");
+const Module = require("module");
+
+/** 简易内存「集合」 */
+function makeCollection(store, name) {
+  if (!store[name]) store[name] = [];
+  const coll = store[name];
+
+  const matches = (doc, where) =>
+    Object.entries(where || {}).every(([k, v]) => doc[k] === v);
+
+  return {
+    where(cond) {
+      return {
+        limit(n) {
+          return {
+            async get() {
+              return { data: coll.filter((d) => matches(d, cond)).slice(0, n) };
+            },
+          };
+        },
+        async count() {
+          return { total: coll.filter((d) => matches(d, cond)).length };
+        },
+        orderBy() {
+          return this;
+        },
+        skip() {
+          return this;
+        },
+        async get() {
+          return { data: coll.filter((d) => matches(d, cond)) };
+        },
+      };
+    },
+    doc(id) {
+      return {
+        async get() {
+          const d = coll.find((x) => x._id === id);
+          return { data: d ? { ...d } : null };
+        },
+        async update({ data }) {
+          const d = coll.find((x) => x._id === id);
+          if (!d) return { stats: { updated: 0 } };
+          for (const [k, v] of Object.entries(data)) {
+            // 支持原子指令 { __inc: n }
+            if (v && typeof v === "object" && "__inc" in v) {
+              d[k] = (d[k] || 0) + v.__inc;
+            } else {
+              d[k] = v;
+            }
+          }
+          return { stats: { updated: 1 } };
+        },
+      };
+    },
+    async add({ data }) {
+      const _id = `id_${coll.length + 1}_${Math.random().toString(36).slice(2, 8)}`;
+      coll.push({ _id, ...data });
+      return { _id };
+    },
+    orderBy() {
+      return this;
+    },
+    limit() {
+      return this;
+    },
+    async get() {
+      return { data: [...coll] };
+    },
+  };
+}
+
+/** 构造一次 mock 环境（每次调用 loadFunction 前重置） */
+function resetMocks(state) {
+  state.store = {};
+  state.openid = "";
+  state.sent = [];
+  state.warnings = [];
+}
+
+/**
+ * 加载指定云函数模块，返回其 main 函数。
+ * @param {string} fnName 云函数目录名
+ * @param {object} opts { OPENID }
+ */
+function loadFunction(fnName, opts = {}) {
+  const state = {
+    store: {},
+    openid: opts.OPENID || "",
+    sent: [],
+    warnings: [],
+  };
+
+  const dbCommand = {
+    inc: (n) => ({ __inc: n }),
+  };
+
+  const cloudMock = {
+    DYNAMIC_CURRENT_ENV: "test-env",
+    init() {},
+    database() {
+      const api = {
+        command: dbCommand,
+        collection: (name) => makeCollection(state.store, name),
+      };
+      return api;
+    },
+    getWXContext() {
+      return { OPENID: state.openid };
+    },
+    async getTempFileURL({ fileList }) {
+      return { fileList: fileList.map((f) => ({ fileID: f, tempFileURL: `https://cdn/${f}` })) };
+    },
+    openapi: {
+      security: {
+        async msgSecCheck() {
+          return { result: { suggest: "pass" } };
+        },
+      },
+      subscribeMessage: {
+        async send(payload) {
+          state.sent.push(payload);
+          return { errCode: 0 };
+        },
+      },
+    },
+  };
+
+  const fnPath = path.resolve(__dirname, "..", fnName, "index.js");
+
+  // 拦截 require("wx-server-sdk")
+  const origResolve = Module._resolveFilename;
+  Module._resolveFilename = function (request, ...rest) {
+    if (request === "wx-server-sdk") return "wx-server-sdk";
+    return origResolve.call(this, request, ...rest);
+  };
+  const origLoad = Module._load;
+  Module._load = function (request, ...rest) {
+    if (request === "wx-server-sdk") return cloudMock;
+    return origLoad.call(this, request, ...rest);
+  };
+
+  delete require.cache[fnPath];
+  let mod;
+  try {
+    mod = require(fnPath);
+  } finally {
+    Module._resolveFilename = origResolve;
+    Module._load = origLoad;
+  }
+
+  return { main: mod.main, state };
+}
+
+module.exports = { loadFunction, resetMocks };
