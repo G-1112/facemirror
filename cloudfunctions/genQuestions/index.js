@@ -46,9 +46,45 @@ function mockQuestions(text) {
   return qs;
 }
 
+/** 频率限制（防 LLM 配额被刷）：默认每用户每小时 10 次 */
+async function rateLimited(openid, limit = 10, windowMs = 60 * 60 * 1000) {
+  const db = cloud.database();
+  try {
+    const res = await db
+      .collection("rate_limits")
+      .where({ openid, ts: db.command.gte(Date.now() - windowMs) })
+      .count();
+    if (res && res.total >= limit) return true;
+    await db.collection("rate_limits").add({
+      data: { openid, ts: Date.now(), action: "genQuestions" },
+    });
+    return false;
+  } catch (e) {
+    // 限流记录失败不阻塞主流程（集合首次写入会自动创建）
+    console.warn("限流记录失败（不阻塞）:", e.message);
+    return false;
+  }
+}
+
 exports.main = async (event) => {
+  // 1) 身份校验：云函数必须绑定登录态，杜绝匿名调用刷 LLM 配额
+  const { OPENID } = cloud.getWXContext();
+  if (!OPENID) return { error: "未获取用户身份，请重新登录" };
+
   const { fileID, scene } = event;
   if (!fileID) return { error: "缺少 fileID" };
+
+  // 2) 归属校验：材料必须由当前用户上传（cloudPath 约定含 /{openid}/）。
+  //    否则任何拿到 fileID 的人都能下载他人简历/项目材料（越权读取）。
+  if (!String(fileID).includes(`/${OPENID}/`)) {
+    console.warn("越权下载被拒:", fileID, OPENID);
+    return { error: "无权访问该材料" };
+  }
+
+  // 3) 频率限制：LLM 调用有真实成本，防止被恶意刷取
+  if (await rateLimited(OPENID)) {
+    return { error: "出题过于频繁，请稍后再试" };
+  }
 
   let text = "";
   try {

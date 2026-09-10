@@ -36,7 +36,7 @@ App<IAppOption>({
   },
 });
 
-interface IAppOption {
+export interface IAppOption {
   globalData: {
     openid: string;
     cloudEnv: string;

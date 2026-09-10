@@ -1,5 +1,8 @@
 // 出题页：随机抽题 / 自定义出题（上传材料 → AI 生成追问）
+import type { IAppOption } from "../../app";
 import { genQuestions, getQuestions } from "../../utils/api";
+
+const app = getApp<IAppOption>();
 
 Page({
   data: {
@@ -23,6 +26,8 @@ Page({
   async loadRandom() {
     this.setData({ loading: true });
     try {
+      // 云函数已开启鉴权，调用前确保 openid 就绪
+      if (!app.globalData.openid) await app.login();
       const { questions } = await getQuestions({ scene: this.data.scene, limit: 1 });
       if (questions && questions.length) {
         this.setData({ question: questions[0].text });
@@ -51,8 +56,17 @@ Page({
         this.setData({ uploading: true, materialName: file.name });
         wx.showLoading({ title: "AI 生成追问中" });
         try {
+          // openid 写入 cloudPath：云函数据此校验材料归属，
+          // 防止他人拿到 fileID 后越权下载简历 / 项目材料
+          let openid = app.globalData.openid;
+          if (!openid) {
+            await app.login();
+            openid = app.globalData.openid;
+          }
+          if (!openid) throw new Error("登录失败，请重启小程序后重试");
+
           const upload = await wx.cloud.uploadFile({
-            cloudPath: `materials/${Date.now()}-${file.name}`,
+            cloudPath: `materials/${openid}/${Date.now()}-${file.name}`,
             filePath: file.path,
           });
           const { questions } = await genQuestions({
