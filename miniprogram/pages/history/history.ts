@@ -10,10 +10,19 @@ const SCENE_LABEL: Record<string, string> = {
 Page({
   data: {
     list: [] as any[],
+    filtered: [] as any[],
     total: 0,
     page: 1,
     loading: false,
     hasMore: true,
+    // 场景筛选（第三轮交互增强）
+    sceneFilter: "all" as string,
+    sceneTabs: [
+      { key: "all", label: "全部" },
+      { key: "interview", label: "面试" },
+      { key: "defense", label: "答辩" },
+      { key: "presentation", label: "展示" },
+    ],
     // 练习趋势面板（交互增强）
     stats: {
       count: 0,
@@ -49,10 +58,23 @@ Page({
         hasMore: merged.length < total,
         loading: false,
       });
+      this.applyFilter(merged);
       this.computeStats(merged);
     } catch (e) {
       this.setData({ loading: false });
     }
+  },
+
+  /** 按场景筛选已加载的记录（纯前端，不额外请求） */
+  applyFilter(list: any[]) {
+    const f = this.data.sceneFilter;
+    this.setData({ filtered: f === "all" ? list : list.filter((it) => it.scene === f) });
+  },
+
+  onSelectScene(e: WechatMiniprogram.TouchEvent) {
+    const key = e.currentTarget.dataset.key as string;
+    this.setData({ sceneFilter: key });
+    this.applyFilter(this.data.list);
   },
 
   /** 由已完成记录聚合练习趋势（纯前端，无需后端改动） */

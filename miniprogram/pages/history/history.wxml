@@ -51,8 +51,24 @@
     <view>还没有练习记录，去练一道吧</view>
   </view>
 
+  <!-- 场景筛选（第三轮交互增强） -->
+  <view wx:if="{{list.length}}" class="scene-tabs">
+    <view
+      wx:for="{{sceneTabs}}"
+      wx:key="key"
+      class="scene-tab {{sceneFilter === item.key ? 'active' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onSelectScene"
+    >{{item.label}}</view>
+  </view>
+
+  <view wx:if="{{!filtered.length && list.length}}" class="empty">
+    <view class="empty-icon">🔍</view>
+    <view>该场景下暂无记录</view>
+  </view>
+
   <view
-    wx:for="{{list}}"
+    wx:for="{{filtered}}"
     wx:key="_id"
     class="card history-item"
     data-id="{{item._id}}"

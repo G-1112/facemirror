@@ -27,6 +27,19 @@
       </view>
     </view>
 
+    <!-- 薄弱项诊断（第三轮交互增强）：最低分维度 → 可执行建议 → 一键去练 -->
+    <view class="card weakness-card" wx:if="{{weakness}}">
+      <view class="card-title">最该提升的一项</view>
+      <view class="weakness-head">
+        <view class="weakness-badge">{{weakness.label}} {{weakness.value}}</view>
+        <view class="weakness-title">{{weakness.title}}</view>
+      </view>
+      <view class="weakness-tip">{{weakness.tip}}</view>
+      <button class="weakness-btn" size="mini" bindtap="onPracticeWeakness">
+        去练「{{weakness.sceneLabel}}」 →
+      </button>
+    </view>
+
     <!-- 表达分析（规则化） -->
     <view class="card">
       <view class="card-title">表达数据分析</view>

@@ -157,3 +157,26 @@
   text-align: right;
   flex-shrink: 0;
 }
+
+/* ---- 场景筛选（第三轮交互增强） ---- */
+.scene-tabs {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 20rpx;
+}
+.scene-tab {
+  flex: 1;
+  text-align: center;
+  font-size: 26rpx;
+  color: #475569;
+  background: #fff;
+  border: 2rpx solid #e2e8f0;
+  border-radius: 999rpx;
+  padding: 12rpx 0;
+}
+.scene-tab.active {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+  font-weight: 600;
+}
