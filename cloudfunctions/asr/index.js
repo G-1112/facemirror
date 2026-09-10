@@ -37,6 +37,30 @@ async function checkQuota(openid) {
   }
 }
 
+/**
+ * 只读检查配额（不占用）。
+ *
+ * 性能修复（B-05）：ASR 是两段式，客户端每 3s 轮询续查，原实现每次 re-entry 都
+ * 通过 checkQuota 扣一次配额，一段 30s 录音可把每日 20 次额度耗尽。
+ * 正确语义是「每次识别任务占一次」，因此：
+ *   - 需要创建新任务时才真正扣减（reserveQuota）；
+ *   - 续查（复用已有 asrTaskId）与读取已完成记录只做只读检查。
+ */
+async function peekQuota(openid) {
+  try {
+    const { date } = { date: todayKey() };
+    const q = await db.collection("quota").where({ openid, date }).limit(1).get();
+    const used = q.data.length ? q.data[0].count || 0 : 0;
+    if (used >= DAILY_LIMIT) {
+      return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
+    }
+    return { ok: true };
+  } catch (e) {
+    console.warn("quota peek failed:", e.message);
+    return { ok: true };
+  }
+}
+
 /** 服务端内容安全检测：违规或接口异常都拒绝落库（fail-close） */
 async function assertSafe(text) {
   if (!text || !text.trim()) return;
@@ -78,17 +102,23 @@ async function getFileUrl(fileID) {
 const POLL_INTERVAL_MS = 2000;
 const POLL_BUDGET_MS = 12000; // 预留时间给创建任务与写库，避免撞 20s 默认超时
 
+// 热容器内复用的 ASR SDK client（性能修复 B-06）
+let _asrClientCache = null;
+
 function asrClient() {
   const secretId = process.env.TENCENT_SECRET_ID;
   const secretKey = process.env.TENCENT_SECRET_KEY;
   if (!secretId || !secretKey) return null;
+  // 性能修复（B-06）：SDK client 在热容器内复用，避免每次轮询都 require + new
+  if (_asrClientCache) return _asrClientCache;
   const tencentcloud = require("tencentcloud-sdk-nodejs-asr");
   const AsrClient = tencentcloud.asr.v20190614.Client;
-  return new AsrClient({
+  _asrClientCache = new AsrClient({
     credential: { secretId, secretKey },
     region: "ap-guangzhou",
     profile: { httpProfile: { endpoint: "asr.tencentcloudapi.com" } },
   });
+  return _asrClientCache;
 }
 
 /** 创建识别任务，返回 TaskId */
@@ -172,13 +202,10 @@ exports.main = async (event) => {
   if (!owned.data.length) return { error: "记录不存在或无访问权限" };
 
   const p = owned.data[0];
-  // 配额校验（审计修复 B-03）：按 openid 限流，防止计费接口被无限调用
-  const quota = await checkQuota(OPENID);
-  if (!quota.ok) return { error: quota.reason };
-
   if (!p.audioFileID) return { error: "缺少音频文件" };
 
-  // 已完成识别的记录直接返回结果，避免重复创建任务（重复计费）
+  // 已完成识别的记录直接返回结果，避免重复创建任务（重复计费）。
+  // 性能修复（B-05）：此分支必须先于配额判断——读取已有结果不应消耗任何配额。
   if (p.status === "asr_done" || p.status === "done" || p.status === "analyzing") {
     return { status: p.status, transcript: p.transcript || "", needManual: !!p.needManual };
   }
@@ -191,6 +218,9 @@ exports.main = async (event) => {
     // 复用已有任务 ID（续查），否则创建新任务
     let taskId = p.asrTaskId;
     if (!taskId) {
+      // 仅「创建新任务」才真正占用一次配额（B-05：续查不再重复扣减）
+      const quota = await checkQuota(OPENID);
+      if (!quota.ok) return { error: quota.reason };
       const url = await getFileUrl(p.audioFileID);
       taskId = await createAsrTask(url);
       if (!taskId) {
@@ -199,6 +229,10 @@ exports.main = async (event) => {
       } else {
         await db.collection("practices").doc(recordId).update({ data: { asrTaskId: taskId } });
       }
+    } else {
+      // 续查路径：只读检查上限，不扣配额
+      const quota = await peekQuota(OPENID);
+      if (!quota.ok) return { error: quota.reason };
     }
 
     if (taskId) {
