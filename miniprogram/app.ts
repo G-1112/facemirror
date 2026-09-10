@@ -27,8 +27,10 @@ App<IAppOption>({
         name: "login",
         data: {},
       });
-      if (result && result.openid) {
-        this.globalData.openid = result.openid;
+      // 云函数返回类型为 string | AnyObject，需收窄后取 openid
+      const r = result as { openid?: string } | undefined;
+      if (r && typeof r.openid === "string") {
+        this.globalData.openid = r.openid;
       }
     } catch (e) {
       console.warn("登录失败", e);

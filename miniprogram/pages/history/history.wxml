@@ -1,4 +1,51 @@
 <view class="container">
+  <!-- 练习趋势面板（交互增强） -->
+  <view wx:if="{{stats.count}}" class="trend-panel">
+    <view class="trend-head">
+      <text class="trend-title">练习趋势</text>
+      <text class="trend-sub">已完成 {{stats.count}} 次</text>
+    </view>
+    <view class="trend-metrics">
+      <view class="metric">
+        <text class="metric-num">{{stats.avgScore}}</text>
+        <text class="metric-label">平均分</text>
+      </view>
+      <view class="metric">
+        <text class="metric-num">{{stats.bestScore}}</text>
+        <text class="metric-label">最高分</text>
+      </view>
+      <view class="metric">
+        <text class="metric-num {{stats.trendUp ? 'up' : 'down'}}">
+          {{stats.trendUp ? '+' : ''}}{{stats.trendDelta}}
+        </text>
+        <text class="metric-label">近期趋势</text>
+      </view>
+    </view>
+
+    <!-- 近 8 次分数迷你柱状图 -->
+    <view class="spark">
+      <view
+        wx:for="{{stats.spark}}"
+        wx:key="index"
+        class="spark-bar"
+        style="height: {{item}}%"
+      >
+        <text class="spark-val">{{item}}</text>
+      </view>
+    </view>
+
+    <!-- 五维能力平均 -->
+    <view class="dims">
+      <view wx:for="{{stats.dims}}" wx:key="key" class="dim-row">
+        <text class="dim-label">{{item.label}}</text>
+        <view class="dim-track">
+          <view class="dim-fill" style="width: {{item.value}}%"></view>
+        </view>
+        <text class="dim-val">{{item.value}}</text>
+      </view>
+    </view>
+  </view>
+
   <view wx:if="{{!list.length && !loading}}" class="empty">
     <view class="empty-icon">📭</view>
     <view>还没有练习记录，去练一道吧</view>
