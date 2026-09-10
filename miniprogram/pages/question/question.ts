@@ -19,6 +19,16 @@ Page({
     const scene = query.scene || "interview";
     const mode = query.mode || "random";
     this.setData({ scene, mode });
+    if (mode === "retry") {
+      // 同题重练（第四轮）：沿用上一次的题目，便于直接对比改进效果，
+      // 不再随机抽题。
+      const preset = query.question ? decodeURIComponent(query.question) : "";
+      this.setData({
+        question: preset || "（原题缺失，请点击「换一题」重新抽题）",
+        loading: false,
+      });
+      return;
+    }
     if (mode === "random") this.loadRandom();
     else this.setData({ loading: false });
   },

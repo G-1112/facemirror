@@ -27,6 +27,15 @@
       </view>
     </view>
 
+    <!-- 同题重练（第四轮交互增强）：沿用原题再练，便于直接对比改进 -->
+    <view class="card retry-card" wx:if="{{questionText}}">
+      <view class="retry-label">原题</view>
+      <view class="retry-question">{{questionText}}</view>
+      <button class="retry-btn" size="mini" bindtap="onRetrySameQuestion">
+        同题重练，看是否进步 →
+      </button>
+    </view>
+
     <!-- 薄弱项诊断（第三轮交互增强）：最低分维度 → 可执行建议 → 一键去练 -->
     <view class="card weakness-card" wx:if="{{weakness}}">
       <view class="card-title">最该提升的一项</view>

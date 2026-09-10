@@ -42,6 +42,8 @@ Page({
     loading: true,
     report: null as any,
     transcript: "",
+    questionText: "",
+    scene: "interview",
     showPoster: false,
     weakness: null as any,
     radarLabels: ["内容", "结构", "表达", "节奏", "专业度"],
@@ -65,6 +67,8 @@ Page({
       this.setData({
         report: p.report,
         transcript: p.transcript,
+        questionText: p.questionText || "",
+        scene: p.scene || "interview",
         loading: false,
         weakness: this.diagnose(p.report),
       });
@@ -72,6 +76,18 @@ Page({
       wx.showToast({ title: "加载失败", icon: "none" });
       this.setData({ loading: false });
     }
+  },
+
+  /** 同题重练（第四轮）：沿用原题再练一次，便于直接对比改进效果 */
+  onRetrySameQuestion() {
+    const q = this.data.questionText;
+    if (!q) {
+      wx.showToast({ title: "原题缺失，请重新抽题", icon: "none" });
+      return;
+    }
+    wx.navigateTo({
+      url: `/pages/question/question?scene=${this.data.scene}&mode=retry&question=${encodeURIComponent(q)}`,
+    });
   },
 
   /** 找出最低分维度并给出可执行建议（无报告或数据缺失时返回 null） */

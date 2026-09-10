@@ -188,3 +188,31 @@
   border-radius: 999rpx;
   padding: 0 28rpx;
 }
+
+/* ---- 同题重练卡（第四轮交互增强） ---- */
+.retry-card {
+  border-left: 6rpx solid #2563eb;
+  background: linear-gradient(135deg, #eff6ff 0%, #fff 60%);
+}
+.retry-label {
+  font-size: 22rpx;
+  color: #64748b;
+  margin-bottom: 8rpx;
+}
+.retry-question {
+  font-size: 27rpx;
+  color: #1f2937;
+  line-height: 1.6;
+  margin-bottom: 18rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.retry-btn {
+  background: #2563eb;
+  color: #fff;
+  font-size: 26rpx;
+  border-radius: 999rpx;
+  padding: 0 28rpx;
+}

@@ -51,6 +51,21 @@ export interface Practice {
   createdAt: number;
 }
 
+/**
+ * getPractice 云函数的返回结构。
+ * 与 cloudfunctions/getPractice/index.js 的 return 字段一一对应
+ * （第四轮修正：原类型漏了 scene / questionText，导致结果页取不到原题）。
+ */
+export interface PracticeDetail {
+  status: Practice["status"];
+  transcript: string;
+  sentences: SentenceNote[];
+  scene: string;
+  questionText: string;
+  durationSec: number;
+  report: PracticeReport | null;
+}
+
 // ---- 通用调用 ----
 
 async function call<T = any>(name: string, data: Record<string, any> = {}): Promise<T> {
@@ -75,7 +90,7 @@ export function submitPractice(payload: {
 }
 
 /** 轮询练习状态与结果 */
-export function getPractice(recordId: string): Promise<{ status: string; transcript: string; report?: PracticeReport }> {
+export function getPractice(recordId: string): Promise<PracticeDetail> {
   return call("getPractice", { recordId });
 }
 
