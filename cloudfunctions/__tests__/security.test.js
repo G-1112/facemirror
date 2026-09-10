@@ -150,6 +150,46 @@ async function it(name, fn) {
     assert.ok(rejected >= 1, "并发请求中应至少有一个被限流拒绝");
   });
 
+  // ---------------------------------------------------------------- getHistory
+  console.log("\ngetHistory（越权隔离 + 分页 + 并行）");
+
+  await it("只返回本人已完成记录，不含他人与未完成", async () => {
+    const { main, state } = loadFunction("getHistory", { OPENID: "o1" });
+    state.store.practices = [
+      { _id: "a", openid: "o1", status: "done", createdAt: 3 },
+      { _id: "b", openid: "o2", status: "done", createdAt: 2 },
+      { _id: "c", openid: "o1", status: "pending", createdAt: 1 },
+    ];
+    const res = await main({ page: 1, pageSize: 10 });
+    const ids = res.list.map((r) => r._id);
+    assert.deepStrictEqual(ids, ["a"], `越权/过滤失败: ${JSON.stringify(ids)}`);
+    assert.strictEqual(res.total, 1, "total 应为本人已完成数");
+  });
+
+  await it("pageSize 被夹到 1..20", async () => {
+    const { main } = loadFunction("getHistory", { OPENID: "o1" });
+    const big = await main({ page: 1, pageSize: 9999 });
+    assert.ok(big.pageSize <= 20, `pageSize 未收敛: ${big.pageSize}`);
+    const neg = await main({ page: -5, pageSize: 0 });
+    assert.ok(neg.pageSize >= 1 && neg.page >= 1, JSON.stringify(neg));
+  });
+
+  await it("分页参数非法时回落到默认值", async () => {
+    const { main } = loadFunction("getHistory", { OPENID: "o1" });
+    const res = await main({ page: "abc", pageSize: "xyz" });
+    assert.strictEqual(res.page, 1);
+    assert.strictEqual(res.pageSize, 10);
+  });
+
+  // -------------------------------------------------------------- getQuestions
+  console.log("\ngetQuestions（limit 收敛）");
+
+  await it("limit 被夹到 1..20", async () => {
+    const { main } = loadFunction("getQuestions", { OPENID: "o1" });
+    const res = await main({ limit: 500 });
+    assert.ok(res.limit === undefined || res.limit <= 20, JSON.stringify(res).slice(0, 80));
+  });
+
   console.log(`\n结果：${passed} passed, ${failed} failed`);
   process.exit(failed > 0 ? 1 : 0);
 })();

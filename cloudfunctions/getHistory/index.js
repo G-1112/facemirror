@@ -15,14 +15,19 @@ exports.main = async (event) => {
   pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(pageSize) || 10));
 
   const where = { openid: OPENID, status: "done" };
-  const countRes = await db.collection("practices").where(where).count();
-  const res = await db
-    .collection("practices")
-    .where(where)
-    .orderBy("createdAt", "desc")
-    .skip((page - 1) * pageSize)
-    .limit(pageSize)
-    .get();
+
+  // 性能（第三轮 B-10）：count 与 get 相互独立，原先串行 await 导致
+  // 两次网络往返叠加。改为 Promise.all 并行，历史列表响应时间约减半。
+  const [countRes, res] = await Promise.all([
+    db.collection("practices").where(where).count(),
+    db
+      .collection("practices")
+      .where(where)
+      .orderBy("createdAt", "desc")
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
+      .get(),
+  ]);
 
   return { list: res.data, total: countRes.total, page, pageSize };
 };
