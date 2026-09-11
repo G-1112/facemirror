@@ -1,0 +1,8 @@
+# 锁文件统一使用 LF，避免跨平台换行差异导致锁文件被改写或校验不一致。
+# 背景：本机 core.autocrlf=true，若不显式声明，锁文件在工作区会被转成 CRLF，
+# 在 macOS/Linux 上重新 checkout 又变回 LF，造成锁文件出现无意义的 diff。
+uv.lock            text eol=lf
+package-lock.json  text eol=lf
+*.lock             text eol=lf
+
+# 其余文本文件交由 git 默认处理（沿用 core.autocrlf）

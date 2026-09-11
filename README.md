@@ -45,6 +45,29 @@ facemirror/
 2. 把 `project.config.json` 里的 `appid` 换成你自己的 AppID（当前为 `touristappid` 游客模式，云开发不可用）；
 3. 在 `miniprogram/utils/config.ts` 填入云开发环境 ID（`CLOUD_ENV`）。
 
+### 1.5 本地类型检查（可选）
+
+仓库已提交 `package-lock.json`（根目录 + 11 个云函数各一份），
+用 `npm ci` 可**严格按锁文件**安装，保证与作者环境一致：
+
+```bash
+# 根目录：TypeScript 类型检查所需
+npm ci          # 严格按 package-lock.json 安装（推荐）
+npm run tsc     # 等价于 tsc --noEmit
+
+# 若需安装云函数的本地依赖（一般不必，云端会自动装）
+for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
+```
+
+> **为什么要 `npm ci` 而不是 `npm install`**：`npm ci` 只读锁文件、版本完全可复现；
+> `npm install` 会按 `^` 范围重新解析，可能装到不同版本。
+>
+> **依赖漏洞扫描**：锁文件到位后即可运行（注意本机 npm 若指向 npmmirror 镜像，
+> 该镜像未实现 audit 接口，需显式指定官方源）：
+> ```bash
+> npm audit --registry=https://registry.npmjs.org
+> ```
+
 ### 2. 开通云开发
 
 1. 点击工具栏「云开发」，创建环境；
