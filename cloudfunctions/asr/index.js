@@ -201,6 +201,9 @@ function parseAsrResult(result) {
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   const { recordId } = event;
+  // 第九轮加固：OPENID 缺失时 where({openid: undefined}) 可能被引擎忽略，
+  // 导致归属校验形同虚设（可读他人转写、消耗他人配额）。显式拒绝更安全。
+  if (!OPENID) return { error: "未登录" };
   if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
   // 归属校验（审计修复 B-01）：ASR 是计费接口，未校验归属会被用来刷别人的记录烧钱

@@ -34,6 +34,8 @@ async function assertSafe(text) {
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   const { recordId, transcript } = event;
+  // 第九轮加固：OPENID 缺失时 where({openid: undefined}) 可能被引擎忽略 → 改到他人记录
+  if (!OPENID) return { error: "未登录" };
   if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
   // 归属校验：只能修改自己的记录

@@ -59,6 +59,9 @@ function mockEval(transcript) {
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   const { recordId } = event;
+  // 第九轮加固：OPENID 缺失时 where({openid: undefined}) 可能被引擎忽略，
+  // 导致归属校验形同虚设（可读/刷他人记录）。显式拒绝更安全。
+  if (!OPENID) return { error: "未登录" };
   if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
   // 归属校验（审计修复 B-01）：LLM 评估是计费接口，未校验归属会被用来刷他人记录

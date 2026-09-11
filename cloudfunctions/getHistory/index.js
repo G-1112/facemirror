@@ -11,6 +11,9 @@ exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   let { page = 1, pageSize = 10 } = event;
 
+  // 第九轮加固：OPENID 缺失时 where({openid: undefined}) 可能被引擎忽略 → 返回全部用户记录
+  if (!OPENID) return { error: "未登录" };
+
   page = Math.max(1, Number(page) || 1);
   pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(pageSize) || 10));
 

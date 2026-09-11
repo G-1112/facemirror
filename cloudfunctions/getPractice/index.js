@@ -11,6 +11,8 @@ const db = cloud.database();
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   const { recordId } = event;
+  // 第九轮加固：OPENID 缺失时 where({openid: undefined}) 可能被引擎忽略 → 读到他人记录
+  if (!OPENID) return { error: "未登录" };
   if (!recordId || typeof recordId !== "string") return { error: "缺少 recordId" };
 
   const res = await db
