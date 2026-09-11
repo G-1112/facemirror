@@ -1,6 +1,6 @@
 // 录音作答页（FR-04/05/06）：录音 → 上传 → ASR → （人工修正）→ 评估 → 报告
 import { getRecorder, Recorder } from "../../utils/recorder";
-import { submitPractice } from "../../utils/api";
+import { submitPractice, requestSubscribe } from "../../utils/api";
 
 function callFn(name: string, data: Record<string, any> = {}) {
   return wx.cloud.callFunction({ name, data }).then((r) => r.result as any);
@@ -74,8 +74,13 @@ Page({
   async uploadAndSubmit(filePath: string, durationSec: number) {
     wx.showLoading({ title: "上传录音" });
     try {
+      // 先请求订阅授权（必须在提交前——用户授权在前，finalize 推送在后；
+      // 未配置模板 ID 或用户拒绝时静默跳过，不影响主流程）
+      await requestSubscribe();
+      // cloudPath 加随机后缀防同毫秒并发覆盖（时间戳仅毫秒精度，多用户可碰撞）
+      const suffix = Math.random().toString(36).slice(2, 8);
       const upload = await wx.cloud.uploadFile({
-        cloudPath: `audio/${Date.now()}.mp3`,
+        cloudPath: `audio/${Date.now()}-${suffix}.mp3`,
         filePath,
       });
       const { recordId } = await submitPractice({

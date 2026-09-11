@@ -3,6 +3,8 @@
  * 云函数名与 cloudfunctions/ 目录一一对应。
  */
 
+import { SUBSCRIBE_TEMPLATE_ID } from "./config";
+
 // ---- 类型（与云函数返回结构对应） ----
 
 export interface Question {
@@ -114,11 +116,18 @@ export function getHistory(payload: { page?: number; pageSize?: number }): Promi
   return call("getHistory", payload);
 }
 
-/** 订阅消息授权（报告完成通知） */
+/** 订阅消息授权（报告完成通知）。
+ *  模板 ID 在 utils/config.ts 配置；未配置时直接返回 false（不弹授权框），
+ *  finalize 云函数的推送会因无授权而静默失败，不影响主流程。
+ *  注意：必须在「提交练习」之前调用——用户授权在前，服务端推送在后。 */
 export function requestSubscribe(): Promise<boolean> {
   return new Promise((resolve) => {
+    if (!SUBSCRIBE_TEMPLATE_ID) {
+      resolve(false);
+      return;
+    }
     wx.requestSubscribeMessage({
-      tmplIds: ["REPLACE_WITH_TEMPLATE_ID"], // 替换为你在公众平台申请的模板 ID
+      tmplIds: [SUBSCRIBE_TEMPLATE_ID],
       success: () => resolve(true),
       fail: () => resolve(false),
     });
