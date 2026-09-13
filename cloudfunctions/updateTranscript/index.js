@@ -7,6 +7,7 @@ const cloud = require("wx-server-sdk");
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
+const _ = db.command;
 
 const MAX_TRANSCRIPT_LEN = 5000;
 
@@ -55,6 +56,9 @@ exports.main = async (event) => {
     data: {
       transcript: text,
       status: "asr_done", // 修正后进入待分析态
+      // 数据一致性（第十一轮审查 B-16）：转写变更后旧报告即失效，
+      // 必须清除，否则结果页会继续展示基于旧文本的报告（文不对题）。
+      report: _.remove(),
     },
   });
   return { ok: true };

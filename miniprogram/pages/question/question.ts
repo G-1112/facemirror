@@ -60,7 +60,10 @@ Page({
     wx.chooseMessageFile({
       count: 1,
       type: "file",
-      extension: ["txt", "md", "docx", "pdf"],
+      // 修复（第十一轮审查 B-11）：服务端 extractText 只能解析 docx 与纯文本，
+      // 原先放行 pdf 会被按 UTF-8 解码成乱码喂给 LLM，生成无意义追问。
+      // 客户端收敛到服务端真实支持的三种格式（与服务端扩展名白名单一致）。
+      extension: ["txt", "md", "docx"],
       success: async (res) => {
         const file = res.tempFiles[0];
         this.setData({ uploading: true, materialName: file.name });

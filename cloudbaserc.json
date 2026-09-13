@@ -83,12 +83,6 @@
       "timeout": 20,
       "installDependency": true,
       "handler": "index.main"
-    },
-    {
-      "name": "checkContent",
-      "timeout": 20,
-      "installDependency": true,
-      "handler": "index.main"
     }
   ],
   "region": "ap-shanghai"

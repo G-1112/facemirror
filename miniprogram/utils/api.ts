@@ -133,14 +133,3 @@ export function requestSubscribe(): Promise<boolean> {
     });
   });
 }
-
-/** 内容安全检测（用户上传材料文本，审核硬性要求） */
-export async function checkContentSafe(text: string): Promise<boolean> {
-  try {
-    const res = await wx.cloud.callFunction({ name: "checkContent", data: { text } });
-    const r = res.result as { safe: boolean };
-    return !!r.safe;
-  } catch {
-    return true; // 检测失败时放行，避免阻塞主流程
-  }
-}

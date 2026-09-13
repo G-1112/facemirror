@@ -17,27 +17,25 @@ function todayKey() {
   return d.toISOString().slice(0, 10);
 }
 
-/** 检查并占用一次配额；quota 集合需建 { _id, openid, date, count } */
+/**
+ * 检查并占用一次配额。
+ *
+ * 并发加固（第十一轮审查 B-14）：旧实现按 {openid, date} 查询文档，首次使用时
+ * 并发请求会各自 add 出**多条同键文档**，后续计数被拆散，每日上限可被突破。
+ * 改为确定性文档 ID（openid_date_action）+ doc().set() 原子 upsert，
+ * 同键永远只有一条文档；_.inc 原子自增后读回校验，超额原子回滚。
+ */
 async function checkQuota(openid) {
   try {
-    const { date } = { date: todayKey() };
-    const q = await db.collection("quota").where({ openid, date }).limit(1).get();
-    const used = q.data.length ? q.data[0].count || 0 : 0;
-    if (used >= DAILY_LIMIT) {
+    const date = todayKey();
+    const id = `${openid}_${date}_asr`;
+    await db.collection("quota").doc(id).set({
+      data: { openid, date, action: "asr", count: _.inc(1) },
+    });
+    const after = await db.collection("quota").doc(id).get();
+    if ((after.data.count || 0) > DAILY_LIMIT) {
+      await db.collection("quota").doc(id).update({ data: { count: _.inc(-1) } });
       return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
-    }
-    if (q.data.length) {
-      // 原子自增（第三轮 B-09）：原实现「先读 count 再写 count+1」存在竞态，
-      // 并发请求都读到旧值即可突破每日上限。改用 _.inc 原子自增，
-      // 自增后校验是否超额，超额则原子回滚并拒绝。
-      await db.collection("quota").doc(q.data[0]._id).update({ data: { count: _.inc(1) } });
-      const after = await db.collection("quota").doc(q.data[0]._id).get();
-      if ((after.data.count || 0) > DAILY_LIMIT) {
-        await db.collection("quota").doc(q.data[0]._id).update({ data: { count: _.inc(-1) } });
-        return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
-      }
-    } else {
-      await db.collection("quota").add({ data: { openid, date, count: 1 } });
     }
     return { ok: true };
   } catch (e) {
@@ -53,19 +51,22 @@ async function checkQuota(openid) {
  * 性能修复（B-05）：ASR 是两段式，客户端每 3s 轮询续查，原实现每次 re-entry 都
  * 通过 checkQuota 扣一次配额，一段 30s 录音可把每日 20 次额度耗尽。
  * 正确语义是「每次识别任务占一次」，因此：
- *   - 需要创建新任务时才真正扣减（reserveQuota）；
+ *   - 需要创建新任务时才真正扣减（checkQuota）；
  *   - 续查（复用已有 asrTaskId）与读取已完成记录只做只读检查。
  */
 async function peekQuota(openid) {
   try {
-    const { date } = { date: todayKey() };
-    const q = await db.collection("quota").where({ openid, date }).limit(1).get();
-    const used = q.data.length ? q.data[0].count || 0 : 0;
+    const date = todayKey();
+    const id = `${openid}_${date}_asr`;
+    const doc = await db.collection("quota").doc(id).get();
+    const used = (doc.data && doc.data.count) || 0;
     if (used >= DAILY_LIMIT) {
       return { ok: false, reason: `今日练习次数已达上限（${DAILY_LIMIT} 次），明天再来吧` };
     }
     return { ok: true };
   } catch (e) {
+    // 文档不存在（今日还未练习）时 get 会报错，视为未使用
+    if (/not exist|not found/i.test(e.message || "")) return { ok: true };
     console.warn("quota peek failed:", e.message);
     return { ok: true };
   }

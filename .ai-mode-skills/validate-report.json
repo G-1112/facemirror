@@ -1,0 +1,208 @@
+{
+  "timestamp": "2026-09-13T05:06:25.744Z",
+  "projectPath": "E:\\葛铭坤\\26传智\\.workbuddy\\facemirror-validate-view",
+  "skillDirs": [
+    "skills\\facemirror"
+  ],
+  "ignoreSync": {
+    "changed": false,
+    "added": []
+  },
+  "summary": {
+    "total": 38,
+    "passed": 38,
+    "failed": 0,
+    "errors": 0,
+    "warnings": 0,
+    "buildStatus": "skipped"
+  },
+  "rules": {
+    "V001": {
+      "stage": "registration",
+      "level": "error",
+      "name": "禁止依赖主包"
+    },
+    "V003": {
+      "stage": "component",
+      "level": "error",
+      "name": "WXML 组件白名单"
+    },
+    "V005": {
+      "stage": "component",
+      "level": "error",
+      "name": "CSS 禁止属性"
+    },
+    "V006": {
+      "stage": "component",
+      "level": "error",
+      "name": "CSS 禁止选择器"
+    },
+    "V002": {
+      "stage": "registration",
+      "level": "error",
+      "name": "已注册接口必须为 async function"
+    },
+    "V007": {
+      "stage": "registration",
+      "level": "error",
+      "name": "定义-注册一致性"
+    },
+    "V008": {
+      "stage": "registration",
+      "level": "error",
+      "name": "注册-实现一致性"
+    },
+    "V009": {
+      "stage": "output",
+      "level": "error",
+      "name": "接口返回值-outputSchema一致性"
+    },
+    "V010": {
+      "stage": "component",
+      "level": "error",
+      "name": "组件取值-接口返回一致性"
+    },
+    "V011": {
+      "stage": "component",
+      "level": "error",
+      "name": "setData-WXML绑定一致性"
+    },
+    "V012": {
+      "stage": "component",
+      "level": "error",
+      "name": "原子接口若关联原子组件则需文件齐全"
+    },
+    "V013": {
+      "stage": "registration",
+      "level": "error",
+      "name": "mcp.json 体积限制"
+    },
+    "V014": {
+      "stage": "registration",
+      "level": "error",
+      "name": "SKILL.md 必须存在且文件名严格大写"
+    },
+    "V015": {
+      "stage": "component",
+      "level": "error",
+      "name": "原子组件必须配置关联小程序页面"
+    },
+    "V016": {
+      "stage": "registration",
+      "level": "error",
+      "name": "app.json 的 agent.skills[].description 必须存在且非空"
+    },
+    "V017": {
+      "stage": "registration",
+      "level": "error",
+      "name": "handoff 接力页 pagePath 校验"
+    },
+    "V018": {
+      "stage": "registration",
+      "level": "error",
+      "name": "handoff query 参数名与接力页 onLoad 一致性"
+    },
+    "V019": {
+      "stage": "registration",
+      "level": "error",
+      "name": "敏感接口初筛待模型判断"
+    },
+    "V020": {
+      "stage": "registration",
+      "level": "error",
+      "name": "体积与数量上限"
+    },
+    "V021": {
+      "stage": "component",
+      "level": "error",
+      "name": "静态原子组件禁用网络请求与定时器"
+    }
+  },
+  "results": [],
+  "passedSummary": [
+    {
+      "id": "V001",
+      "name": "禁止依赖主包",
+      "count": 15
+    },
+    {
+      "id": "V002",
+      "name": "已注册接口必须为 async function",
+      "count": 3
+    },
+    {
+      "id": "V003",
+      "name": "WXML 组件白名单",
+      "count": 1
+    },
+    {
+      "id": "V005",
+      "name": "CSS 禁止属性",
+      "count": 1
+    },
+    {
+      "id": "V006",
+      "name": "CSS 禁止选择器",
+      "count": 1
+    },
+    {
+      "id": "V007",
+      "name": "定义-注册一致性",
+      "count": 1
+    },
+    {
+      "id": "V008",
+      "name": "注册-实现一致性",
+      "count": 1
+    },
+    {
+      "id": "V009",
+      "name": "接口返回值-outputSchema一致性",
+      "count": 3
+    },
+    {
+      "id": "V012",
+      "name": "原子接口若关联原子组件则需文件齐全",
+      "count": 3
+    },
+    {
+      "id": "V013",
+      "name": "mcp.json 体积限制",
+      "count": 1
+    },
+    {
+      "id": "V014",
+      "name": "SKILL.md 必须存在且文件名严格大写",
+      "count": 1
+    },
+    {
+      "id": "V017",
+      "name": "handoff 接力页 pagePath 校验",
+      "count": 3
+    },
+    {
+      "id": "V018",
+      "name": "handoff query 参数名与接力页 onLoad 一致性",
+      "count": 2
+    },
+    {
+      "id": "V019",
+      "name": "敏感接口初筛待模型判断",
+      "count": 1
+    },
+    {
+      "id": "V020",
+      "name": "体积与数量上限",
+      "count": 1
+    }
+  ],
+  "build": {
+    "ran": false,
+    "success": false,
+    "stage": "unknown",
+    "durationMs": 0,
+    "message": "跳过：未找到微信开发者工具 CLI（已尝试 --cli-path / $WECHAT_DEVTOOLS_CLI / $WXA_CLI / 默认路径 C:/Program Files (x86)/Tencent/微信web开发者工具/cli.bat）。请通过 --cli-path <cli 绝对路径> 或环境变量 WECHAT_DEVTOOLS_CLI 指定后重试。",
+    "logTail": "",
+    "exitCode": 0
+  }
+}

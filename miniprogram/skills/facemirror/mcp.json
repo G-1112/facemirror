@@ -1,0 +1,89 @@
+{
+  "apis": [
+    {
+      "name": "drawQuestion",
+      "description": "从题库随机抽一道表达力练习题目（模拟面试/答辩预演/课堂展示三选一），返回题目文本、分类与难度。用户想开始练习但没有具体题目时使用；抽到题后引导用户点卡片进小程序开口作答。",
+      "_meta": { "ui": { "pagePath": "/pages/question/question" } },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "scene": {
+            "type": "string",
+            "enum": ["interview", "defense", "presentation"],
+            "description": "练习场景：interview=模拟面试（默认），defense=答辩预演，presentation=课堂展示"
+          }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "found": { "type": "boolean" },
+          "scene": { "type": "string" },
+          "sceneLabel": { "type": "string" },
+          "questionText": { "type": "string" },
+          "category": { "type": "string" },
+          "difficulty": { "type": "string" }
+        }
+      }
+    },
+    {
+      "name": "getPracticeHistory",
+      "description": "查询当前用户已完成的表达力练习历史（服务端按身份隔离，只能看到本人记录），返回总次数与最近记录摘要（题目、得分、时间），每条记录含 recordId 可供 getPracticeReport 查看详情。用户问「我练过几次/最近练得怎么样/历史成绩」时使用。",
+      "_meta": { "ui": { "pagePath": "/pages/history/history" } },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "page": { "type": "number", "description": "页码，从 1 开始，默认 1" },
+          "pageSize": { "type": "number", "description": "每页条数，1-20，默认 10" }
+        }
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "number" },
+          "list": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "recordId": { "type": "string" },
+                "scene": { "type": "string" },
+                "questionText": { "type": "string" },
+                "status": { "type": "string" },
+                "totalScore": { "type": ["number", "null"] },
+                "createdAt": { "type": "number" }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "getPracticeReport",
+      "description": "查看某一次练习的评估报告摘要：总分、状态与 AI 总评。需要 recordId，通常先调用 getPracticeHistory 获取。完整雷达图、逐句批注与示范回答需点卡片进小程序查看。",
+      "_meta": { "ui": { "pagePath": "/pages/result/result" } },
+      "inputSchema": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "properties": {
+          "recordId": { "type": "string", "description": "练习记录 ID，来自 getPracticeHistory 返回的 list[].recordId" }
+        },
+        "required": ["recordId"]
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "recordId": { "type": "string" },
+          "status": { "type": "string" },
+          "scene": { "type": "string" },
+          "questionText": { "type": "string" },
+          "durationSec": { "type": "number" },
+          "totalScore": { "type": ["number", "null"] },
+          "overall": { "type": "string" }
+        }
+      }
+    }
+  ]
+}

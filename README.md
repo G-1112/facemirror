@@ -18,14 +18,14 @@ facemirror/
 ├── miniprogram/             # 小程序前端
 │   ├── pages/               # index/question/record/result/history
 │   ├── components/          # radar-chart / sentence-note / share-poster
+│   ├── skills/facemirror/   # 小程序 AI 技能分包（wx.modelContext，启用见 docs/小程序AI技能接入指南.md）
 │   ├── utils/               # api.ts / expression.ts / recorder.ts / config.ts
 │   └── app.ts / app.json
-├── cloudfunctions/          # 云函数（Node.js）
+├── cloudfunctions/          # 云函数（Node.js，10 个）
 │   ├── login / submitPractice / asr / analyze / finalize
-│   ├── genQuestions / getPractice / getQuestions / getHistory / checkContent
-│   └── updateTranscript
+│   └── genQuestions / getPractice / getQuestions / getHistory / updateTranscript
 ├── data/questions/          # 80 题题库 JSON
-├── docs/                    # 作品说明文档（7 项）/ prompt-log
+├── docs/                    # 作品说明文档（7 项）/ prompt-log / 小程序AI技能接入指南
 └── README.md
 ```
 

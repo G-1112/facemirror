@@ -53,9 +53,29 @@ function makeCollection(store, name) {
           const d = coll.find((x) => x._id === id);
           if (!d) return { stats: { updated: 0 } };
           for (const [k, v] of Object.entries(data)) {
-            // 支持原子指令 { __inc: n }
+            // 支持原子指令 { __inc: n } 与字段删除 { __remove: true }
             if (v && typeof v === "object" && "__inc" in v) {
               d[k] = (d[k] || 0) + v.__inc;
+            } else if (v && typeof v === "object" && "__remove" in v) {
+              delete d[k];
+            } else {
+              d[k] = v;
+            }
+          }
+          return { stats: { updated: 1 } };
+        },
+        // doc().set()：upsert（存在则更新，不存在则创建），支持原子指令
+        async set({ data }) {
+          let d = coll.find((x) => x._id === id);
+          if (!d) {
+            d = { _id: id };
+            coll.push(d);
+          }
+          for (const [k, v] of Object.entries(data)) {
+            if (v && typeof v === "object" && "__inc" in v) {
+              d[k] = (d[k] || 0) + v.__inc;
+            } else if (v && typeof v === "object" && "__remove" in v) {
+              delete d[k];
             } else {
               d[k] = v;
             }
@@ -104,6 +124,7 @@ function loadFunction(fnName, opts = {}) {
 
   const dbCommand = {
     inc: (n) => ({ __inc: n }),
+    remove: () => ({ __remove: true }),
   };
 
   const cloudMock = {
@@ -122,10 +143,21 @@ function loadFunction(fnName, opts = {}) {
     async getTempFileURL({ fileList }) {
       return { fileList: fileList.map((f) => ({ fileID: f, tempFileURL: `https://cdn/${f}` })) };
     },
+    // 云存储下载：state.fileContents[fileID] 可注入测试内容（Buffer/string），
+    // 未注入时返回一段默认材料文本，保证 genQuestions 主链路可测
+    async downloadFile({ fileID }) {
+      const injected = state.fileContents && state.fileContents[fileID];
+      const content =
+        injected !== undefined
+          ? injected
+          : "我在 XX 项目中负责后端架构，QPS 提升 40%，使用 FastAPI 与 Redis。";
+      return { fileContent: Buffer.isBuffer(content) ? content : Buffer.from(String(content), "utf-8") };
+    },
     openapi: {
       security: {
+        // state.msgSecSuggest 可配置（默认 pass），用于测试违规拒绝路径
         async msgSecCheck() {
-          return { result: { suggest: "pass" } };
+          return { result: { suggest: state.msgSecSuggest || "pass" } };
         },
       },
       subscribeMessage: {

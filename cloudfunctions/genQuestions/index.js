@@ -1,6 +1,7 @@
 // 自定义出题（FR-03，★核心差异化）：上传简历/项目文档/论文摘要 → LLM 生成 5-8 个针对性追问
 const cloud = require("wx-server-sdk");
 const { callLLM } = require("./llm"); // 独立副本（云函数不能跨目录 require）
+const { escapeForPrompt, scanInjection } = require("./injection"); // 独立副本，与 analyze 同源
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
@@ -13,6 +14,34 @@ const GEN_SYSTEM = `你将扮演一位严格的面试官/答辩评委。基于�
   4. 输出严格 JSON 数组，每项 {"question": "...", "target": "...", "difficulty": "简单|中等|困难"}`;
 
 const GEN_USER = (text) => `【材料】\n${text}`;
+
+// 服务端真实可解析的格式白名单（第十一轮审查 B-11）：
+// extractText 只实现了 docx 解包与纯文本读取，客户端曾放行 pdf，
+// pdf 会被按 UTF-8 解码成乱码喂给 LLM。两侧白名单必须一致。
+const ALLOWED_EXT_RE = /\.(txt|md|docx)$/i;
+
+/** 服务端内容安全检测（fail-close，与 updateTranscript/asr 同一策略）：
+ *  用户上传的材料是 UGC，微信审核硬性要求过 msgSecCheck；
+ *  违规或检测不可用都拒绝处理，不进入 LLM 链路。 */
+async function assertSafe(text) {
+  if (!text || !text.trim()) return;
+  let risky = false;
+  let unavailable = false;
+  try {
+    const res = await cloud.openapi.security.msgSecCheck({
+      content: text.slice(0, 2500),
+      version: 2,
+      scene: 2,
+      openid: cloud.getWXContext().OPENID,
+    });
+    const suggest = res && res.result && res.result.suggest;
+    risky = suggest === "risky";
+  } catch (e) {
+    unavailable = true;
+  }
+  if (risky) throw new Error("材料包含违规信息，请修改后重新上传");
+  if (unavailable) throw new Error("内容安全检测暂不可用，请稍后重试");
+}
 
 /** 从云存储下载材料并提取文本 */
 async function extractText(fileID) {
@@ -74,14 +103,19 @@ exports.main = async (event) => {
   const { fileID, scene } = event;
   if (!fileID) return { error: "缺少 fileID" };
 
-  // 2) 归属校验：材料必须由当前用户上传（cloudPath 约定含 /{openid}/）。
+  // 2) 格式白名单：只接受服务端真实可解析的格式（B-11，与服务端 extractText 能力对齐）
+  if (!ALLOWED_EXT_RE.test(String(fileID))) {
+    return { error: "仅支持 .txt / .md / .docx 文件" };
+  }
+
+  // 3) 归属校验：材料必须由当前用户上传（cloudPath 约定含 /{openid}/）。
   //    否则任何拿到 fileID 的人都能下载他人简历/项目材料（越权读取）。
   if (!String(fileID).includes(`/${OPENID}/`)) {
     console.warn("越权下载被拒:", fileID, OPENID);
     return { error: "无权访问该材料" };
   }
 
-  // 3) 频率限制：LLM 调用有真实成本，防止被恶意刷取
+  // 4) 频率限制：LLM 调用有真实成本，防止被恶意刷取
   if (await rateLimited(OPENID)) {
     return { error: "出题过于频繁，请稍后再试" };
   }
@@ -97,15 +131,36 @@ exports.main = async (event) => {
   if (!text.trim()) return { error: "材料内容为空" };
   text = text.slice(0, 4000); // 控制长度
 
-  let questions;
+  // 5) 内容安全（第十一轮审查 B-12）：材料是 UGC，落 LLM 链路前必须过检，
+  //    与 README/作品说明文档中「用户上传材料过 msgSecCheck」的声明对齐。
   try {
-    const raw = await callLLM(GEN_SYSTEM, GEN_USER(text), { json: true, temperature: 0.3 });
-    questions = JSON.parse(raw);
-    if (!Array.isArray(questions)) throw new Error("非数组");
+    await assertSafe(text);
   } catch (e) {
-    console.warn("LLM 出题失败，降级 mock:", e.message);
-    questions = mockQuestions(text);
+    return { error: e.message };
   }
 
-  return { questions: questions.slice(0, 8) };
+  // 6) Prompt 注入防护（B-13）：材料完全由用户控制，可写入「忽略以上指令……」
+  //    让 LLM 输出与材料无关的内容。命中时不采信 LLM 输出，降级为确定性通用追问，
+  //    并以 injectionFlagged 标记，便于前端提示与后续审计。
+  const injectionHits = scanInjection(text);
+
+  let questions;
+  if (injectionHits.length > 0) {
+    console.warn("材料命中注入特征，降级 mock:", injectionHits.slice(0, 3));
+    questions = mockQuestions(text);
+  } else {
+    try {
+      // 材料先转义定界标记，避免其伪造出「指令区」
+      const raw = await callLLM(GEN_SYSTEM, GEN_USER(escapeForPrompt(text)), { json: true, temperature: 0.3 });
+      questions = JSON.parse(raw);
+      if (!Array.isArray(questions)) throw new Error("非数组");
+    } catch (e) {
+      console.warn("LLM 出题失败，降级 mock:", e.message);
+      questions = mockQuestions(text);
+    }
+  }
+
+  const result = { questions: questions.slice(0, 8) };
+  if (injectionHits.length > 0) result.injectionFlagged = true;
+  return result;
 };

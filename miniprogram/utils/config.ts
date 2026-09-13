@@ -27,5 +27,5 @@ export const SCENES: SceneDef[] = [
 // 录音时限选项（分钟）
 export const DURATION_OPTIONS = [1, 3, 5];
 
-// 内容安全：是否启用 msgSecCheck（默认开启，审核硬性要求）
-export const ENABLE_SECURITY_CHECK = true;
+// 内容安全：统一由服务端 msgSecCheck fail-close 执行（asr / updateTranscript /
+// genQuestions 内置 assertSafe），前端无独立开关。
