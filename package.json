@@ -4,7 +4,8 @@
   "private": true,
   "description": "面镜 · AI 微信小程序（面试/答辩/课堂展示 表达力练习）",
   "scripts": {
-    "tsc": "tsc --noEmit"
+    "tsc": "tsc --noEmit",
+    "test": "node cloudfunctions/__tests__/security.test.js && node cloudfunctions/__tests__/openid_guard.test.js"
   },
   "dependencies": {
     "miniprogram-api-typings": "^3.12.2"

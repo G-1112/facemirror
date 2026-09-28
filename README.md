@@ -41,6 +41,11 @@ facemirror/
 
 ### 1. 打开项目
 
+> **必填占位清单（共 3 处，均为账号相关、无法随仓库预填）**：
+> ① `project.config.json` 的 `appid`（当前为 `touristappid` 游客模式）；
+> ② `miniprogram/utils/config.ts` 的 `CLOUD_ENV`（云开发环境 ID，留空则用默认环境）；
+> ③ 订阅消息模板 ID：`utils/config.ts` 的 `SUBSCRIBE_TEMPLATE_ID` 与云函数 `finalize` 环境变量填同一个值（可选，不填则跳过推送）。
+
 1. 微信开发者工具 → 导入项目 → 选择本目录；
 2. 把 `project.config.json` 里的 `appid` 换成你自己的 AppID（当前为 `touristappid` 游客模式，云开发不可用）；
 3. 在 `miniprogram/utils/config.ts` 填入云开发环境 ID（`CLOUD_ENV`）。
@@ -54,6 +59,7 @@ facemirror/
 # 根目录：TypeScript 类型检查所需
 npm ci          # 严格按 package-lock.json 安装（推荐）
 npm run tsc     # 等价于 tsc --noEmit
+npm test        # 云函数安全/越权回归测试（无需开发者工具，node 直跑）
 
 # 若需安装云函数的本地依赖（一般不必，云端会自动装）
 for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
@@ -135,6 +141,10 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
 
 - 用户上传材料与转写文本过 `security.msgSecCheck` 内容安全检测（审核硬性要求）；
 - 仅通过 `wx.login` 获取 openid，不强制手机号授权；
+- `app.json` 已声明 `"__usePrivacyCheck__": true`（隐私接口检查生效）；
+- **发布/体验版前必做**：在 mp.weixin.qq.com 后台「设置 → 服务内容声明 → 用户隐私保护指引」
+  勾选**麦克风（录音）、相册（仅写入）**两项权限的用途说明——录音与保存海报均属
+  隐私接口，未配置指引会导致真机上直接调用失败；
 - 含隐私协议（提交审核前需补充完整版）。
 
 ---

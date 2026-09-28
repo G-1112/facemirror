@@ -21,5 +21,6 @@
       "desc": "用于录制你的面试/答辩作答，以便生成评估报告"
     }
   },
-  "requiredPrivateInfos": []
+  "requiredPrivateInfos": [],
+  "__usePrivacyCheck__": true
 }
