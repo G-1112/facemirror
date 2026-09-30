@@ -36,10 +36,10 @@ exports.main = async (event) => {
       touser: OPENID,
       templateId,
       page: `pages/result/result?recordId=${safeId}`,
-      // 字段名（thing1/thing2/...）需与你在公众平台申请的模板字段一致
+      // 字段名（thing1/thing2）对应模板「测评报告生成通知」的关键词：报告名称 / 生成状态
       data: {
-        thing1: { value: "表达练习评估报告已生成" },
-        thing2: { value: "点击查看你的能力雷达与改进建议" },
+        thing1: { value: "表达练习评估报告" },
+        thing2: { value: "已生成，可查看能力雷达与改进建议" },
       },
     });
     return { ok: true };
