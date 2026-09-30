@@ -4,7 +4,7 @@
  */
 
 // 云开发环境 ID；留空则使用「默认环境」。正式提交需填写实际环境 ID。
-export const CLOUD_ENV = "";
+export const CLOUD_ENV = "cloudbase-d1g6atosn49a1b532";
 
 // 订阅消息模板 ID（公众平台申请后填写；留空则跳过授权，finalize 推送会静默失败）
 // 注意：云函数 finalize 侧读的是同名环境变量 SUBSCRIBE_TEMPLATE_ID，两侧要填同一个值。

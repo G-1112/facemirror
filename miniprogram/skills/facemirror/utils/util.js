@@ -18,7 +18,7 @@ function successResult(msg, structuredContent) {
 // ---- 云开发初始化（独立分包不共享主包 app.ts 的 wx.cloud.init） ----
 
 // 与主包 miniprogram/utils/config.ts 的 CLOUD_ENV 保持一致；空串 = 默认环境。
-const CLOUD_ENV = "";
+const CLOUD_ENV = "cloudbase-d1g6atosn49a1b532";
 
 let _cloudInited = false;
 function ensureCloudInit() {
