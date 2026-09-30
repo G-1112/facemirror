@@ -2,7 +2,7 @@
   "miniprogramRoot": "miniprogram/",
   "cloudfunctionRoot": "cloudfunctions/",
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wx5f84fd45875f4924",
   "projectname": "facemirror",
   "libVersion": "3.6.0",
   "setting": {
