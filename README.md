@@ -41,14 +41,14 @@ facemirror/
 
 ### 1. 打开项目
 
-> **必填占位清单（共 3 处，均为账号相关、无法随仓库预填）**：
-> ① `project.config.json` 的 `appid`（当前为 `touristappid` 游客模式）；
-> ② `miniprogram/utils/config.ts` 的 `CLOUD_ENV`（云开发环境 ID，留空则用默认环境）；
-> ③ 订阅消息模板 ID：`utils/config.ts` 的 `SUBSCRIBE_TEMPLATE_ID` 与云函数 `finalize` 环境变量填同一个值（可选，不填则跳过推送）。
+> **必填占位清单（共 3 处，均为账号相关、无法随仓库预填）——已全部填写**：
+> ① `project.config.json` 的 `appid`：✅ 已填（微信小程序真实 AppID）；
+> ② `miniprogram/utils/config.ts` 的 `CLOUD_ENV`：✅ 已填（`cloudbase-d1g6atosn49a1b532`，另同步至 `miniprogram/skills/facemirror/utils/util.js` 副本）；
+> ③ 订阅消息模板 ID：✅ 已填（模板「测评报告生成通知」，`utils/config.ts` 的 `SUBSCRIBE_TEMPLATE_ID` = `2Zn06BIC9A3qoLl53hm3yhVICpQVerh6X0hT-Pd0RCk`；**云函数 `finalize` 的环境变量还需部署时配同名值**，见 §云函数部署）。
 
 1. 微信开发者工具 → 导入项目 → 选择本目录；
-2. 把 `project.config.json` 里的 `appid` 换成你自己的 AppID（当前为 `touristappid` 游客模式，云开发不可用）；
-3. 在 `miniprogram/utils/config.ts` 填入云开发环境 ID（`CLOUD_ENV`）。
+2. ~~把 `project.config.json` 里的 `appid` 换成你自己的 AppID~~（已填）；
+3. ~~在 `miniprogram/utils/config.ts` 填入云开发环境 ID（`CLOUD_ENV`）~~（已填）。
 
 ### 1.5 本地类型检查（可选）
 
