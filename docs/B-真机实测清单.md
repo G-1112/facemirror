@@ -90,7 +90,7 @@
 
 | 检查 | 操作 | 预期 |
 |---|---|---|
-| 构建 npm | 工具 → 构建 npm | 无报错（tencentcloud-sdk 等依赖已云端安装，本地构建只验 miniprogram 侧） |
+| 构建 npm | 工具 → 构建 npm | **本项目不适用，跳过**（实测 2026-09-30：`miniprogram/` 无 package.json、前端代码零第三方 npm 依赖；云函数依赖云端安装。「构建 npm」会报 `NPM packages not found`，属预期，非错误） |
 | 编译 | Ctrl+B 编译 | 模拟器首页打开，Console 无红色错误 |
 | 网络 | Network 面板 | login 调用 200，返回 openid |
 | 合法域名校验 | 详情 → 本地设置 | 确认 LLM_BASE_URL 域名已加进 request 合法域名（或开发期勾选「不校验」） |
