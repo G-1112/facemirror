@@ -8,7 +8,7 @@ export const CLOUD_ENV = "";
 
 // 订阅消息模板 ID（公众平台申请后填写；留空则跳过授权，finalize 推送会静默失败）
 // 注意：云函数 finalize 侧读的是同名环境变量 SUBSCRIBE_TEMPLATE_ID，两侧要填同一个值。
-export const SUBSCRIBE_TEMPLATE_ID = "";
+export const SUBSCRIBE_TEMPLATE_ID = "2Zn06BIC9A3qoLl53hm3yhVICpQVerh6X0hT-Pd0RCk";
 
 // 场景定义（对应 FR-02 三类场景）
 export interface SceneDef {
