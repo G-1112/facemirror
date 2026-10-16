@@ -22,3 +22,6 @@ Thumbs.db
 
 # 录音临时文件
 *.tmp
+
+# DevTools 本机私有配置（含机器本地设置，不入库）
+project.private.config.json
