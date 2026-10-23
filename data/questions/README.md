@@ -15,7 +15,10 @@
 ## 导入云数据库
 
 1. 打开微信开发者工具 → 云开发控制台 → 数据库；
-2. 新建集合 `questions`；
-3. 点击「导入」，选择本 `questions.json` 文件（选择 JSON 格式、逐条导入）。
+2. 新建集合 `questions`（权限选「所有用户可读，仅创建者可写」）；
+3. 点击「导入」→ 选择 **`questions.import.json`**（JSON Lines，每行一条，共 80 行）；
+   > ⚠️ 不要导入 `questions.json`——它是标准 JSON 数组（单文档），云开发导入只接受
+   > 每行一条的 JSON Lines，数组格式会报解析失败或导入 0 条。
+4. 导入后 `questions` 集合应有 80 条记录，验证：`db.collection('questions').count()` → 80。
 
 导入后即可在小程序内随机抽题。

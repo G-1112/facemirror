@@ -76,13 +76,43 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
 
 ### 2. 开通云开发
 
-1. 点击工具栏「云开发」，创建环境；
-2. 创建数据库集合：`users`、`practices`、`questions`；
-3. `questions` 集合导入 `data/questions/questions.json`（见 `data/questions/README.md`）。
+1. 点击工具栏「云开发」，创建环境（环境 ID 须与 `miniprogram/utils/config.ts` 的 `CLOUD_ENV` 一致）；
+2. 创建 **4 个**数据库集合（代码 grep 实测，勿按旧文档建 `users`——代码里没有它）：
+
+   | 集合 | 权限 | 缺了会怎样 |
+   |---|---|---|
+   | `practices` | 仅创建者可读写 | 主流程崩，记录写不进去 |
+   | `quota` | 仅创建者可读写 | 配额静默失效（catch 后放行），可被刷爆计费 |
+   | `rate_limits` | 仅管理端可写 | 出题限流静默失效 |
+   | `questions` | 所有用户可读 | 抽题返回空，首页点不动 |
+
+3. `questions` 集合导入 **`data/questions/questions.import.json`**（JSON Lines，80 行）。
+   不要导入 `questions.json`——那是 JSON 数组，云开发导入只认每行一条，会导入 0 条。
+   详见 `data/questions/README.md`。
+
+**验收**：4 个集合存在，`questions` 记录数 = 80，`practices` 权限不是「所有用户可读写」。
 
 ### 3. 部署云函数
 
-对 `cloudfunctions/` 下每个目录：右键 → 「上传并部署：云端安装依赖」。
+**方式 A（推荐，可复现）**：用 CLI 脚本批量部署，顺序与依赖关系已固化：
+
+```bash
+python scripts/deploy_cloud.py           # 干跑：只打印命令，不上传
+python scripts/deploy_cloud.py --apply   # 真部署（需 IDE 已登录 + 服务端口开启）
+python scripts/deploy_cloud.py --check   # 核对云端函数清单
+```
+
+**方式 B**：对 `cloudfunctions/` 下每个目录右键 → 「上传并部署：云端安装依赖」，
+建议先上 `login`，方便最早验证连通性。
+
+> **两个易踩的坑（都已处理，别改回去）**：
+> 1. `asr` / `genQuestions` / `updateTranscript` 会调用 `security.msgSecCheck`，
+>    必须在各自目录的 `config.json` 里声明 `permissions.openapi`，否则报 `-604101`，
+>    `assertSafe` 走 fail-close → **转写会全失败**。该配置有 10 分钟缓存，刚上传即报错请等一会儿。
+> 2. 超时**无法**在 `config.json` 设。部署后须去云开发控制台把 `asr` / `analyze` 改成 **60 秒**，
+>    否则长音频会被默认超时强杀。
+>
+> 完整排障流程见 [`docs/B-真机攻坚手册.md`](docs/B-真机攻坚手册.md)。
 
 ### 4. 配置云函数环境变量
 

@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "envId": "{{envId}}",
+  "envId": "cloudbase-d1g6atosn49a1b532",
   "$schema": "https://framework-1258016615.tcloudbaseapp.com/schema/latest.json",
   "framework": {
     "name": "facemirror",
