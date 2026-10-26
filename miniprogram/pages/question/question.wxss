@@ -52,3 +52,14 @@
 .start-btn {
   width: 100%;
 }
+
+/* 忙碌态视觉反馈（不阻断点击，防重入由 JS 守卫负责） */
+.is-busy {
+  opacity: 0.6;
+}
+
+/* 加载失败提示（新增） */
+.load-err {
+  color: #dc2626;
+  margin-bottom: 16rpx;
+}

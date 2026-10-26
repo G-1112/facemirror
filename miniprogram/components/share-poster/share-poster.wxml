@@ -1,4 +1,9 @@
 <view class="poster-wrap">
   <canvas type="2d" id="poster" class="poster-canvas"></canvas>
-  <button class="save-btn" bindtap="save" disabled="{{saving}}">{{saving ? '生成中…' : '保存海报到相册'}}</button>
+  <!--
+    ⚠️ 刻意**不用 disabled="{{saving}}"**（2026-10-26 同族事故）：
+    saving 若卡在 true，按钮会永久变灰点不动。
+    现在按钮永不禁用，防重入由 nav-guard 的时间戳锁负责（自动过期）。
+  -->
+  <button class="save-btn {{saving ? 'is-busy' : ''}}" bindtap="save">{{saving ? '生成中…' : '保存海报到相册'}}</button>
 </view>

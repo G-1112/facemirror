@@ -11,11 +11,22 @@ const _ = db.command;
 
 const MAX_TRANSCRIPT_LEN = 5000;
 
-/** 服务端内容安全检测：未通过或接口异常一律拒绝写入（fail-close） */
+/**
+ * 服务端内容安全检测：未通过或接口异常一律拒绝写入（fail-close）。
+ *
+ * 排障增强（2026-10-26）：原先 catch 把异常整个吞掉，只抛一句
+ * "内容安全检测暂不可用"，导致**底层真实原因永久丢失**——
+ * 云函数日志里看不到任何东西，客户端只看到一个笼统的 toast。
+ * 现在把原始 errMsg 拼进错误消息，日志里一眼可辨：
+ *   -604101 → 缺 permissions.openapi / 10 分钟权限缓存期
+ *   -502005 → 集合不存在
+ *   其他     → 原始 errMsg 原样带出
+ */
 async function assertSafe(text) {
   if (!text || !text.trim()) return;
   let risky = false;
   let unavailable = false;
+  let rawErr = "";
   try {
     const res = await cloud.openapi.security.msgSecCheck({
       content: text.slice(0, 2500),
@@ -27,9 +38,18 @@ async function assertSafe(text) {
     risky = suggest === "risky";
   } catch (e) {
     unavailable = true;
+    rawErr = String((e && (e.errMsg || e.message)) || e || "unknown");
+    // 原始原因写进云函数日志（客户端只看到精简后的文案）
+    console.error("[updateTranscript] msgSecCheck 失败:", rawErr);
   }
   if (risky) throw new Error("内容包含违规信息，请修改后重试");
-  if (unavailable) throw new Error("内容安全检测暂不可用，请稍后重试");
+  if (unavailable) {
+    // 保留原始原因的后半段（去掉 "cloud.callFunction:fail" 之类前缀）
+    const reason = rawErr.replace(/^.*?fail\s*:?\s*/i, "").trim() || rawErr;
+    throw new Error(
+      "内容安全检测暂不可用，请稍后重试（原因：" + reason.slice(0, 120) + "）"
+    );
+  }
 }
 
 exports.main = async (event) => {

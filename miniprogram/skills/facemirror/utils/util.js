@@ -30,13 +30,33 @@ function ensureCloudInit() {
 // ---- 云函数调用封装（对齐主包 miniprogram/utils/api.ts 的 call()：
 //      云函数约定以 { error } 返回失败，封装层统一抛出） ----
 
+// 云函数调用超时（毫秒）：与主包 api.ts 的 CALL_TIMEOUT_MS 保持一致。
+// 修复：原先无超时，云函数未部署 / 环境未关联 / 网络挂起时 Promise 永不 settle，
+// 调用方会永久挂起（表现为主包「题目无法加载」同类问题）。
+const CALL_TIMEOUT_MS = 20000;
+
 async function callCloud(name, data) {
   ensureCloudInit();
   console.info("[ai-mode] callCloud 请求:", name, JSON.stringify(data || {}));
-  const res = await wx.cloud.callFunction({ name, data: data || {} });
+  let timer = null;
+  let res;
+  try {
+    res = await Promise.race([
+      wx.cloud.callFunction({ name, data: data || {} }),
+      new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("网络超时，请检查网络后重试")), CALL_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    // 必须清理定时器：否则调用早已成功时仍会触发一次 reject
+    if (timer !== null) clearTimeout(timer);
+  }
   const result = res && res.result;
   console.info("[ai-mode] callCloud 响应:", name, result && result.error ? "error=" + result.error : "ok");
-  if (result && result.error) throw new Error(result.error);
+  if (!result || typeof result !== "object") {
+    throw new Error("服务无响应，请稍后重试");
+  }
+  if (result.error) throw new Error(result.error);
   return result;
 }
 

@@ -1,5 +1,31 @@
 // 五维雷达图组件（原生 Canvas 2D，无第三方依赖）
 // 数据源：report.radar = [内容, 结构, 表达, 节奏, 专业度]（各 1-5 分）
+
+/** 取设备像素比。
+ *  修复：原先用 wx.getSystemInfoSync()，该接口自基础库 2.20.1 起已停止维护，
+ *  官方推荐改用 wx.getDeviceInfo()；此处做兼容降级，取不到时用 2。
+ *  注：小程序组件文件的 TS 处于全局作用域（未开 module），
+ *  同名函数会与其他文件冲突，故用随机命名空间隔离。 */
+const RADAR_PX_RATIO = (() => {
+  const get = () => {
+    try {
+      const info = (wx as any).getDeviceInfo ? (wx as any).getDeviceInfo() : null;
+      if (info && typeof info.pixelRatio === "number" && info.pixelRatio > 0) {
+        return info.pixelRatio;
+      }
+    } catch (_) {
+      // 忽略：降级到 getSystemInfoSync
+    }
+    try {
+      const sys = wx.getSystemInfoSync();
+      return sys.pixelRatio || 2;
+    } catch (_) {
+      return 2;
+    }
+  };
+  return get;
+})();
+
 Component({
   properties: {
     radar: { type: Array, value: [3, 3, 3, 3, 3] },
@@ -29,9 +55,17 @@ Component({
           if (!info || !info.node) return;
           const canvas = info.node;
           const ctx = canvas.getContext("2d");
-          const dpr = wx.getSystemInfoSync().pixelRatio || 2;
-          canvas.width = info.width * dpr;
-          canvas.height = info.height * dpr;
+          if (!ctx) return;
+          const dpr = RADAR_PX_RATIO();
+          // 修复：给 canvas.width/height 赋值会重置变换矩阵，
+          // 但如果本次未重新赋值（如尺寸未变），上一次的 ctx.scale(dpr,dpr)
+          // 会与本次叠加，导致图形被放大 dpr² 倍。
+          // 这里每次都显式重置变换，保证缩放只生效一次。
+          if (canvas.width !== Math.round(info.width * dpr)) {
+            canvas.width = Math.round(info.width * dpr);
+            canvas.height = Math.round(info.height * dpr);
+          }
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
           ctx.scale(dpr, dpr);
           this.render(ctx, info.width, info.height);
         });
@@ -39,10 +73,19 @@ Component({
 
     render(ctx: any, w: number, h: number) {
       ctx.clearRect(0, 0, w, h);
-      const radar: number[] = this.data.radar;
-      const labels: string[] = this.data.labels;
-      const n = radar.length;
+      // 修复：radar 与 labels 长度可能不一致（服务端数据缺项/多维），
+      // 原实现直接按 radar.length 遍历，labels[i] 可能为 undefined → 画布上出现 "undefined 3"。
+      // 这里取两者较小值作为维度数，并对数值做合法性归一。
+      const srcRadar: any[] = Array.isArray(this.data.radar) ? this.data.radar : [];
+      const srcLabels: any[] = Array.isArray(this.data.labels) ? this.data.labels : [];
+      const n = Math.min(srcRadar.length, srcLabels.length);
       if (!n) return;
+      const radar = srcRadar.slice(0, n).map((v) => {
+        const num = Number(v);
+        if (isNaN(num)) return 0;
+        return Math.max(0, Math.min(5, num));
+      });
+      const labels = srcLabels.slice(0, n).map((v) => (v == null ? "" : String(v)));
 
       const cx = w / 2;
       const cy = h / 2;

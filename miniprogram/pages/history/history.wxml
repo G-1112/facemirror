@@ -46,7 +46,15 @@
     </view>
   </view>
 
-  <view wx:if="{{!list.length && !loading}}" class="empty">
+  <!-- 加载失败（修复：原先失败后静默，用户看到的是「还没有记录」的空态，
+       无法区分「本来就没有」与「加载失败」，且无重试入口） -->
+  <view wx:if="{{loadFailed}}" class="empty">
+    <view class="empty-icon">⚠️</view>
+    <view>加载失败：{{errorMsg}}</view>
+    <button class="btn-ghost retry-load-btn" bindtap="onRetry">重新加载</button>
+  </view>
+
+  <view wx:if="{{!list.length && !loading && !loadFailed}}" class="empty">
     <view class="empty-icon">📭</view>
     <view>还没有练习记录，去练一道吧</view>
   </view>

@@ -4,6 +4,24 @@
   color: #9ca3af;
 }
 
+/* 加载失败 / 空态（新增） */
+.empty {
+  text-align: center;
+  padding: 80rpx 40rpx;
+  color: #6b7280;
+  font-size: 28rpx;
+}
+.empty-icon {
+  font-size: 72rpx;
+  margin-bottom: 16rpx;
+}
+.retry-load-btn {
+  margin-top: 32rpx;
+  width: 320rpx;
+  font-size: 28rpx;
+  line-height: 2.4;
+}
+
 .score-card {
   text-align: center;
   padding: 40rpx;

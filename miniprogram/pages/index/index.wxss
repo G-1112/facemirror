@@ -79,6 +79,11 @@
   width: 100%;
 }
 
+/* 跳转中的视觉反馈（不阻断点击，防重入由 JS 锁负责） */
+.start-btn.is-busy {
+  opacity: 0.6;
+}
+
 .history-link {
   text-align: center;
   color: #2563eb;

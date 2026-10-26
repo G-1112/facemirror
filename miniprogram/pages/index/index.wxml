@@ -41,6 +41,16 @@
     </view>
   </view>
 
-  <button class="btn-primary start-btn" bindtap="onStart">开始练习</button>
+  <!--
+    ⚠️ 这里刻意**不用 disabled="{{navigating}}"**。
+    事故记录（2026-10-26）：用 disabled 做防重入，一旦 navigating 卡在 true
+    （navigateTo 的 success/fail 都没回调），按钮会永久变灰且点击被吞掉，
+    整个首页彻底死掉，只能重启小程序才能恢复。
+    现在：disabled 全部交给 JS 侧的锁（onStart 里 if (navigating) return），
+    按钮永远可点；navigating 只用于显示"跳转中…"的视觉反馈。
+  -->
+  <button class="btn-primary start-btn {{navigating ? 'is-busy' : ''}}" bindtap="onStart">
+    {{navigating ? '跳转中…' : '开始练习'}}
+  </button>
   <view class="history-link" bindtap="onHistory">查看历史记录 →</view>
 </view>

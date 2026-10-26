@@ -25,7 +25,14 @@ exports.main = async (event) => {
   const total = countRes.total;
   if (!total) return { questions: [] };
 
-  const skip = Math.floor(Math.random() * Math.max(0, total - limit));
+  // 修复随机抽题的分布偏置：
+  // 原式 Math.floor(Math.random() * Math.max(0, total - limit))
+  //   ① total === limit 时 max(0,0)=0 → skip 恒为 0，永远只抽到同一批；
+  //   ② total = limit + k 时，随机范围是 [0, k)，末尾 limit-1 条永远抽不到。
+  // 正确做法：随机起点落在 [0, total - limit] 闭区间，
+  // 保证每条题目被抽中的概率均等（等概率无放回抽 limit 条）。
+  const maxStart = Math.max(0, total - limit);
+  const skip = Math.floor(Math.random() * (maxStart + 1));
   const res = await col.skip(skip).limit(limit).get();
   return { questions: res.data };
 };

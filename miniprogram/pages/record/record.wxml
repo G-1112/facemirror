@@ -19,26 +19,50 @@
 
   <!-- 录音区 -->
   <view wx:if="{{status === 'idle' || status === 'paused' || status === 'recording'}}" class="record-area">
-    <view wx:if="{{status !== 'idle'}}" class="countdown">{{formatTime(remaining)}}</view>
-    <view class="record-btn {{status === 'recording' ? 'recording' : ''}}" bindtap="{{status === 'recording' ? 'onPause' : (status === 'paused' ? 'onResume' : 'onStartRecord')}}">
+    <!-- 修复：倒计时改用逻辑层预置的 remainingText。
+         模板表达式取不到 Page 方法区定义的 formatTime（只能取 data 及其中的函数），
+         原 {{formatTime(remaining)}} 求值为空 → 元素占位但无文字。 -->
+    <view wx:if="{{status !== 'idle'}}" class="countdown">{{remainingText}}</view>
+    <!-- 录音主按钮：改为静态 bindtap + 逻辑层按 status 分派（稳健性重构，非缺陷修复）。
+         动态 bindtap="{{...}}" 官方是支持的，且实测求值正常（原按钮曾正确显示「▶ 继续」）。
+         改为静态绑定后，事件处理函数恒定存在，不再依赖模板求值时机。 -->
+    <view
+      class="record-btn {{status === 'recording' ? 'recording' : ''}}"
+      bindtap="onRecordTap"
+      data-act="toggle"
+    >
       {{status === 'recording' ? '⏸ 暂停' : (status === 'paused' ? '▶️ 继续' : '🎙 开始作答')}}
     </view>
-    <button wx:if="{{status !== 'idle'}}" class="btn-ghost stop-btn" bindtap="onStop">结束作答</button>
+    <!-- 「结束作答」只在真正可停止的两种状态下出现。
+         原条件是 status !== 'idle'，虽然外层 record-area 已经限定了
+         idle/paused/recording，但把前置条件写死在按钮上更安全：
+         一旦外层条件被改宽，也不会出现「在 uploading 态还能点结束」的死按钮。 -->
+    <button wx:if="{{status === 'recording' || status === 'paused'}}" class="btn-ghost stop-btn" bindtap="onStop">结束作答</button>
   </view>
 
   <!-- 处理中 -->
-  <view wx:if="{{status === 'uploading' || status === 'transcribing'}}" class="card processing">
-    <view class="processing-text">{{status === 'uploading' ? '上传录音中…' : '语音识别中…'}}</view>
+  <view
+    wx:if="{{status === 'stopping' || status === 'uploading' || status === 'transcribing' || status === 'analyzing'}}"
+    class="card processing"
+  >
+    <view class="processing-text">
+      {{status === 'stopping' ? '正在结束录音…'
+        : (status === 'uploading' ? '上传录音中…'
+        : (status === 'transcribing' ? '语音识别中…' : 'AI 评估中…'))}}
+    </view>
     <view class="muted">录音结束到报告生成通常不超过 60 秒</view>
   </view>
 
   <!-- 人工修正转写 -->
   <view wx:if="{{showEditor && status === 'editing'}}" class="card">
     <view class="section-title">确认转写文本（可修正）</view>
+    <view class="muted" wx:if="{{!transcript}}">
+      录音不可用时，可直接输入或粘贴你的作答内容，同样能生成评估报告
+    </view>
     <textarea
       class="transcript-editor"
       value="{{transcript}}"
-      placeholder="未配置语音识别，请手动粘贴/输入你的作答内容"
+      placeholder="输入或粘贴你的作答内容"
       bindinput="onTranscriptInput"
       maxlength="5000"
     ></textarea>

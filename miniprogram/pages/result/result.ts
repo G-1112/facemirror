@@ -1,5 +1,5 @@
 // 报告页（FR-09/10/11）：总分 + 雷达 + 维度 + 逐句批注 + 改进建议 + 分享海报
-import { getPractice } from "../../utils/api";
+import { getPractice, showCallError, errorText } from "../../utils/api";
 
 // 薄弱项诊断（第三轮交互增强）：把最低分维度转成「一句诊断 + 一条可执行建议 + 推荐练习场景」，
 // 让用户看完分数后知道「下一步具体练什么」，而不是停在分数上。
@@ -40,6 +40,9 @@ Page({
   data: {
     recordId: "",
     loading: true,
+    // 加载失败标记：修复「失败后页面永久空白、无重试入口」
+    loadFailed: false,
+    errorMsg: "",
     report: null as any,
     transcript: "",
     questionText: "",
@@ -54,28 +57,111 @@ Page({
       { key: "professional", label: "专业度" },
       { key: "delivery", label: "表达" },
     ],
+    // 维度分数预计算：修复「模板中 report.dimensions[item.key] 索引缺失维度时
+    // 渲染 undefined，且乘 20 得到 NaN 导致进度条宽度异常」
+    dimRows: [] as { key: string; label: string; value: number; percent: number }[],
+    // 列表数据预计算：修复「模板中 report.strengths.length 等深层访问，
+    // 字段缺失时渲染层直接抛错导致整页白屏」
+    strengths: [] as any[],
+    improvements: [] as string[],
+    sentenceNotes: [] as any[],
+    // 雷达图数据兜底：缺失时给中性值 [3,3,3,3,3]，避免组件拿到空数组不渲染
+    radarData: [3, 3, 3, 3, 3] as number[],
+    // 表达指标预计算：同上，避免模板直接深层访问 report.expression.*
+    expressionView: {
+      speedWpm: 0,
+      fillerRate: 0,
+      longPauseCount: 0,
+      fillerTop3: [] as string[],
+      opening: 0,
+      body: 0,
+      closing: 0,
+    },
   },
+
+  // 页面是否仍存活：load() 是异步链，用户中途退出后不应再 setData
+  alive: true,
 
   onLoad(query: Record<string, string>) {
     this.setData({ recordId: query.recordId || "" });
     this.load();
   },
 
+  onUnload() {
+    // 页面已销毁：异步加载链完成后不再 setData，避免控制台告警
+    this.alive = false;
+  },
+
   async load() {
+    this.setData({ loading: true, loadFailed: false, errorMsg: "" });
     try {
+      if (!this.data.recordId) {
+        throw new Error("缺少记录 ID");
+      }
       const p = await getPractice(this.data.recordId);
+      if (!this.alive) return; // 页面已卸载，避免向已销毁页面 setData
+      // 报告可能尚未生成（status 仍为 pending/asr_done），
+      // 此时 report 为 null，属正常中间态而非错误
       this.setData({
         report: p.report,
         transcript: p.transcript,
         questionText: p.questionText || "",
         scene: p.scene || "interview",
         loading: false,
+        loadFailed: !p.report,
+        errorMsg: p.report ? "" : "报告还在生成中，请稍后重试",
         weakness: this.diagnose(p.report),
       });
-    } catch (e) {
-      wx.showToast({ title: "加载失败", icon: "none" });
-      this.setData({ loading: false });
+      this.setData({
+        dimRows: this.buildDimRows(p.report),
+        expressionView: this.buildExpressionView(p.report),
+        strengths: Array.isArray(p.report?.strengths) ? p.report.strengths : [],
+        improvements: Array.isArray(p.report?.improvements) ? p.report.improvements : [],
+        sentenceNotes: Array.isArray(p.report?.sentenceNotes) ? p.report.sentenceNotes : [],
+        radarData: this.buildRadar(p.report),
+      });
+    } catch (e: any) {
+      // 修复：原先只 toast 后 loading=false，report 仍为 null →
+      // 整个页面只剩一个「加载中…」消失后的空白，用户无法判断发生了什么，
+      // 也没有重试入口。
+      if (!this.alive) return; // 页面已卸载，避免向已销毁页面 setData
+      this.setData({
+        loading: false,
+        loadFailed: true,
+        errorMsg: errorText(e, "加载失败"),
+      });
+      showCallError(e, "加载失败");
     }
+  },
+
+  /** 重试加载（新增） */
+  onRetry() {
+    this.load();
+  },
+
+  /** 把 report.dimensions 摊平成渲染用的行数组（缺失维度按 0 处理） */
+  buildDimRows(report: any) {
+    const dims = report?.dimensions || {};
+    return this.data.dimensionList.map((d: any) => {
+      const raw = Number(dims[d.key]);
+      const value = isNaN(raw) ? 0 : Math.max(0, Math.min(5, raw));
+      return { key: d.key, label: d.label, value, percent: value * 20 };
+    });
+  },
+
+  /** 把 report.expression 摊平成渲染用的视图对象（缺失字段按 0 处理） */
+  buildExpressionView(report: any) {
+    const ex = report?.expression || {};
+    const split = ex.timeSplit || {};
+    return {
+      speedWpm: Number(ex.speedWpm) || 0,
+      fillerRate: Number(ex.fillerRate) || 0,
+      longPauseCount: Number(ex.longPauseCount) || 0,
+      fillerTop3: Array.isArray(ex.fillerTop3) ? ex.fillerTop3 : [],
+      opening: Number(split.opening) || 0,
+      body: Number(split.body) || 0,
+      closing: Number(split.closing) || 0,
+    };
   },
 
   /** 同题重练（第四轮）：沿用原题再练一次，便于直接对比改进效果 */
@@ -88,6 +174,17 @@ Page({
     wx.navigateTo({
       url: `/pages/question/question?scene=${this.data.scene}&mode=retry&question=${encodeURIComponent(q)}`,
     });
+  },
+
+  /** 雷达图数据兜底：长度不足或含非法值时补齐为中性 3 分 */
+  buildRadar(report: any) {
+    const src = Array.isArray(report?.radar) ? report.radar : [];
+    const out: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      const v = Number(src[i]);
+      out.push(isNaN(v) ? 3 : Math.max(0, Math.min(5, v)));
+    }
+    return out;
   },
 
   /** 找出最低分维度并给出可执行建议（无报告或数据缺失时返回 null） */
@@ -122,11 +219,22 @@ Page({
   },
 
   onShowPoster() {
+    // 防御：report 为空时打开海报弹层，模板访问 report.totalScore 会渲染 undefined
+    if (!this.data.report) {
+      wx.showToast({ title: "报告尚未生成", icon: "none" });
+      return;
+    }
     this.setData({ showPoster: true });
   },
 
   onHidePoster() {
     this.setData({ showPoster: false });
+  },
+
+  /** 空实现：用于 catchtap="noop"，阻止海报弹层内部点击冒泡到遮罩。
+   *  必须真实存在——官方《事件绑定》说明处理函数未定义时控制台会报错。 */
+  noop() {
+    // 故意留空
   },
 
   onShareAppMessage() {

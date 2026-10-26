@@ -17,3 +17,8 @@
   border-radius: 16rpx;
   width: 400rpx;
 }
+
+/* 忙碌态视觉反馈（不阻断点击，防重入由 nav-guard 负责） */
+.save-btn.is-busy {
+  opacity: 0.6;
+}

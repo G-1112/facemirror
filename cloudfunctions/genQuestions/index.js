@@ -52,7 +52,12 @@ async function extractText(fileID) {
   if (lower.endsWith(".docx")) {
     const JSZip = require("jszip");
     const zip = await JSZip.loadAsync(buf);
-    const xml = await zip.file("word/document.xml").async("string");
+    const entry = zip.file("word/document.xml");
+    // 修复：原实现直接 zip.file(...).async(...)，若文件不是合法 docx
+    //（缺 word/document.xml），entry 为 null → 抛 "Cannot read property 'async' of null"，
+    // 外层捕获后只能报「材料解析失败」，用户无法判断是格式问题还是内容问题。
+    if (!entry) throw new Error("docx 结构异常：缺少 word/document.xml");
+    const xml = await entry.async("string");
     // 提取 <w:t> 之间的文本
     const texts = [];
     xml.replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g, (_, t) => texts.push(t));
@@ -160,7 +165,21 @@ exports.main = async (event) => {
     }
   }
 
-  const result = { questions: questions.slice(0, 8) };
+  // 修复：LLM 返回的数组元素结构不可控（可能是字符串 / 缺字段 / question 为空），
+  // 原实现直接 slice 返回，前端会渲染出空白选项卡（q.question 为 undefined）。
+  // 这里逐项校验并丢弃非法项，字段缺失时补默认值。
+  const normalized = (Array.isArray(questions) ? questions : [])
+    .filter((q) => q && typeof q === "object" && typeof q.question === "string" && q.question.trim())
+    .map((q) => ({
+      question: q.question.trim(),
+      target: typeof q.target === "string" && q.target.trim() ? q.target.trim() : "综合",
+      difficulty: ["简单", "中等", "困难"].includes(q.difficulty) ? q.difficulty : "中等",
+    }));
+
+  // 全部非法时降级到确定性追问，保证用户始终能拿到可用问题
+  const finalQuestions = normalized.length ? normalized : mockQuestions(text);
+
+  const result = { questions: finalQuestions.slice(0, 8) };
   if (injectionHits.length > 0) result.injectionFlagged = true;
   return result;
 };

@@ -1,6 +1,13 @@
 <view class="container">
   <view wx:if="{{loading}}" class="loading">加载中…</view>
 
+  <!-- 加载失败 / 报告未生成（修复：原先只有 loading 分支，失败后页面全空白） -->
+  <view wx:if="{{loadFailed}}" class="empty">
+    <view class="empty-icon">📄</view>
+    <view>{{errorMsg}}</view>
+    <button class="btn-ghost retry-load-btn" bindtap="onRetry">重新加载</button>
+  </view>
+
   <block wx:if="{{report}}">
     <!-- 总分 -->
     <view class="card score-card">
@@ -12,18 +19,18 @@
     <!-- 雷达图 -->
     <view class="card">
       <view class="card-title">五维能力雷达</view>
-      <radar-chart radar="{{report.radar}}" labels="{{radarLabels}}" />
+      <radar-chart radar="{{radarData}}" labels="{{radarLabels}}" />
     </view>
 
-    <!-- 各维度分数 -->
+    <!-- 各维度分数（改用预计算的 dimRows，避免模板中索引缺失维度得到 undefined/NaN） -->
     <view class="card">
       <view class="card-title">维度评分</view>
-      <view class="dim-row" wx:for="{{dimensionList}}" wx:key="key">
+      <view class="dim-row" wx:for="{{dimRows}}" wx:key="key">
         <view class="dim-label">{{item.label}}</view>
         <view class="dim-bar">
-          <view class="dim-fill" style="width: {{report.dimensions[item.key] * 20}}%"></view>
+          <view class="dim-fill" style="width: {{item.percent}}%"></view>
         </view>
-        <view class="dim-score">{{report.dimensions[item.key]}}</view>
+        <view class="dim-score">{{item.value}}</view>
       </view>
     </view>
 
@@ -49,52 +56,52 @@
       </button>
     </view>
 
-    <!-- 表达分析（规则化） -->
+    <!-- 表达分析（规则化）—— 改用预计算的 expressionView，避免模板深层访问 report.expression.* 时字段缺失导致渲染 undefined -->
     <view class="card">
       <view class="card-title">表达数据分析</view>
       <view class="stat-grid">
         <view class="stat">
-          <view class="stat-num">{{report.expression.speedWpm}}</view>
+          <view class="stat-num">{{expressionView.speedWpm}}</view>
           <view class="stat-label">语速(字/分)</view>
         </view>
         <view class="stat">
-          <view class="stat-num">{{report.expression.fillerRate}}%</view>
+          <view class="stat-num">{{expressionView.fillerRate}}%</view>
           <view class="stat-label">填充词密度</view>
         </view>
         <view class="stat">
-          <view class="stat-num">{{report.expression.longPauseCount}}</view>
+          <view class="stat-num">{{expressionView.longPauseCount}}</view>
           <view class="stat-label">长停顿次数</view>
         </view>
       </view>
-      <view wx:if="{{report.expression.fillerTop3.length}}" class="filler-top">
-        口头禅：<text wx:for="{{report.expression.fillerTop3}}" wx:key="*this">{{item}} </text>
+      <view wx:if="{{expressionView.fillerTop3.length}}" class="filler-top">
+        口头禅：<text wx:for="{{expressionView.fillerTop3}}" wx:key="*this">{{item}} </text>
       </view>
       <view class="time-split">
-        时长分配：开场 {{report.expression.timeSplit.opening}}% · 主体 {{report.expression.timeSplit.body}}% · 结尾 {{report.expression.timeSplit.closing}}%
+        时长分配：开场 {{expressionView.opening}}% · 主体 {{expressionView.body}}% · 结尾 {{expressionView.closing}}%
       </view>
     </view>
 
     <!-- 优点 -->
-    <view class="card" wx:if="{{report.strengths.length}}">
+    <view class="card" wx:if="{{strengths.length}}">
       <view class="card-title">优点</view>
-      <view class="strength" wx:for="{{report.strengths}}" wx:key="index">
+      <view class="strength" wx:for="{{strengths}}" wx:key="index">
         <view class="strength-text">{{item.text}}</view>
         <view class="strength-quote">「{{item.quote}}」</view>
       </view>
     </view>
 
     <!-- 改进建议 -->
-    <view class="card" wx:if="{{report.improvements.length}}">
+    <view class="card" wx:if="{{improvements.length}}">
       <view class="card-title">改进建议</view>
-      <view class="improvement" wx:for="{{report.improvements}}" wx:key="index">
+      <view class="improvement" wx:for="{{improvements}}" wx:key="index">
         {{index + 1}}. {{item}}
       </view>
     </view>
 
     <!-- 逐句批注 -->
-    <view class="card" wx:if="{{report.sentenceNotes.length}}">
+    <view class="card" wx:if="{{sentenceNotes.length}}">
       <view class="card-title">逐句批注</view>
-      <sentence-note wx:for="{{report.sentenceNotes}}" wx:key="index" note="{{item}}" />
+      <sentence-note wx:for="{{sentenceNotes}}" wx:key="index" note="{{item}}" />
     </view>
 
     <!-- 示范回答 -->
@@ -111,8 +118,14 @@
 
   <!-- 分享海报弹层 -->
   <view wx:if="{{showPoster}}" class="poster-mask" bindtap="onHidePoster">
-    <view class="poster-modal" catchtap="">
-      <share-poster score="{{report.totalScore}}" radar="{{report.radar}}" labels="{{radarLabels}}" />
+    <!-- 修复：原先写 catchtap=""（空处理函数名）。
+         官方《事件绑定》说明：处理函数必须在 Page 构造器中定义同名函数，
+         否则触发事件时控制台会报错。空字符串会绑定一个不存在的方法，
+         每次点击海报区域都会在控制台留下错误日志。
+         改为绑定一个真实的空实现函数 noop —— catch 语义照常阻止冒泡，
+         点弹层内部不会误触发遮罩的关闭。 -->
+    <view class="poster-modal" catchtap="noop">
+      <share-poster score="{{report.totalScore}}" radar="{{radarData}}" labels="{{radarLabels}}" />
       <view class="close-btn" bindtap="onHidePoster">关闭</view>
     </view>
   </view>

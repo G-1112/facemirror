@@ -5,7 +5,7 @@
   "description": "面镜 · AI 微信小程序（面试/答辩/课堂展示 表达力练习）",
   "scripts": {
     "tsc": "tsc --noEmit",
-    "test": "node cloudfunctions/__tests__/security.test.js && node cloudfunctions/__tests__/openid_guard.test.js"
+    "test": "node cloudfunctions/__tests__/security.test.js && node cloudfunctions/__tests__/openid_guard.test.js && node tests/question_loading.test.js && node tests/privacy.test.js && node tests/api_error.test.js && node tests/nav_guard.test.js && node tests/index_start_button.test.js && node tests/question_go_button.test.js && node tests/share_poster_save_button.test.js && node tests/record_state_machine.test.js"
   },
   "dependencies": {
     "miniprogram-api-typings": "^3.12.2"

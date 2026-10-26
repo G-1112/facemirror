@@ -26,11 +26,45 @@
 
   <!-- 当前题目 -->
   <view class="section-title">当前题目</view>
-  <view class="card current-question">
-    <view class="q-text">{{question}}</view>
+
+  <!-- 加载中（修复：原先随机抽题期间无任何加载提示，页面看起来是空的） -->
+  <view wx:if="{{loading}}" class="card current-question">
+    <view class="q-text muted">题目加载中…</view>
   </view>
 
-  <button wx:if="{{mode === 'random'}}" class="btn-ghost change-btn" bindtap="onChange">换一题</button>
+  <!-- 加载失败（修复：原先失败后只弹一次 toast，页面留白且无法重试） -->
+  <view wx:if="{{loadFailed}}" class="card current-question">
+    <view class="q-text load-err">题目加载失败：{{errorMsg}}</view>
+    <button class="btn-ghost change-btn" bindtap="onChange">重新加载</button>
+  </view>
 
-  <button class="btn-primary start-btn" bindtap="onGo" disabled="{{!question}}">去作答</button>
+  <view wx:if="{{!loading && !loadFailed}}" class="card current-question">
+    <!-- 修复：自定义出题模式未上传材料时，原先「当前题目」是空卡片，
+         用户不知道下一步该做什么。这里给出明确引导。 -->
+    <view wx:if="{{question}}" class="q-text">{{question}}</view>
+    <view wx:elif="{{mode === 'custom'}}" class="q-text muted">
+      还没有题目——请先上传你的简历 / 项目文档，AI 会生成针对性追问
+    </view>
+    <view wx:else class="q-text muted">暂无题目</view>
+  </view>
+
+  <!--
+    ⚠️ 刻意**不用 disabled="{{loading}}"**。
+    事故记录（2026-10-26）：loading 若卡在 true（只有唯一归位路径），
+    按钮会永久变灰且点击被吞掉，用户彻底无法换题。
+    现在按钮永不禁用，loading 期间点击由 JS 层拦截并提示「题目加载中，请稍候」。
+  -->
+  <button wx:if="{{mode === 'random' && !loadFailed}}" class="btn-ghost change-btn {{loading ? 'is-busy' : ''}}" bindtap="onChange">
+    {{loading ? '换题中…' : '换一题'}}
+  </button>
+
+  <!--
+    同理，「去作答」不用 disabled="{{!question || loading}}"：
+    没题目 / 加载中 这两种情况由 onGo 在 JS 层拦截，并给出**可操作的提示**
+    （"请先获取题目" / "加载失败，请先点「重新加载」"），
+    而不是让按钮默默变灰、点了毫无反应。
+  -->
+  <button class="btn-primary start-btn {{navigating ? 'is-busy' : ''}}" bindtap="onGo">
+    {{navigating ? '跳转中…' : '去作答'}}
+  </button>
 </view>
