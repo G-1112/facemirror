@@ -156,7 +156,16 @@ function loadFunction(fnName, opts = {}) {
     openapi: {
       security: {
         // state.msgSecSuggest 可配置（默认 pass），用于测试违规拒绝路径
+        // state.msgSecError 可配置为错误码字符串 → 桩会抛异常（模拟平台接口不可用）
+        //   典型值："61010"（用户访问记录超时）/ "45009"（每日配额）/ "-604101"（权限未生效）
         async msgSecCheck() {
+          if (state.msgSecError) {
+            const e = new Error("service unavailable");
+            e.errCode = state.msgSecError;
+            e.errMsg =
+              "openapi.security.msgSecCheck:fail system error: error code: " + state.msgSecError;
+            throw e;
+          }
           return { result: { suggest: state.msgSecSuggest || "pass" } };
         },
       },
@@ -170,6 +179,10 @@ function loadFunction(fnName, opts = {}) {
   };
 
   const fnPath = path.resolve(__dirname, "..", fnName, "index.js");
+  // 云函数目录下的共享模块（如 sec-check.js）也必须在桩生效期间加载，
+  // 否则它们会拿到真实的 wx-server-sdk（未安装 → require 失败），
+  // 或者拿到上一个测试残留的模块实例（桩不生效 → 断言假红/假绿）。
+  const secCheckPath = path.resolve(__dirname, "..", fnName, "sec-check.js");
 
   // 拦截 require("wx-server-sdk")
   const origResolve = Module._resolveFilename;
@@ -184,6 +197,7 @@ function loadFunction(fnName, opts = {}) {
   };
 
   delete require.cache[fnPath];
+  delete require.cache[secCheckPath];
   let mod;
   try {
     mod = require(fnPath);

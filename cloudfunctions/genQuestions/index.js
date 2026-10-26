@@ -1,5 +1,6 @@
 // 自定义出题（FR-03，★核心差异化）：上传简历/项目文档/论文摘要 → LLM 生成 5-8 个针对性追问
 const cloud = require("wx-server-sdk");
+const { checkText } = require("./sec-check");
 const { callLLM } = require("./llm"); // 独立副本（云函数不能跨目录 require）
 const { escapeForPrompt, scanInjection } = require("./injection"); // 独立副本，与 analyze 同源
 
@@ -19,29 +20,6 @@ const GEN_USER = (text) => `【材料】\n${text}`;
 // extractText 只实现了 docx 解包与纯文本读取，客户端曾放行 pdf，
 // pdf 会被按 UTF-8 解码成乱码喂给 LLM。两侧白名单必须一致。
 const ALLOWED_EXT_RE = /\.(txt|md|docx)$/i;
-
-/** 服务端内容安全检测（fail-close，与 updateTranscript/asr 同一策略）：
- *  用户上传的材料是 UGC，微信审核硬性要求过 msgSecCheck；
- *  违规或检测不可用都拒绝处理，不进入 LLM 链路。 */
-async function assertSafe(text) {
-  if (!text || !text.trim()) return;
-  let risky = false;
-  let unavailable = false;
-  try {
-    const res = await cloud.openapi.security.msgSecCheck({
-      content: text.slice(0, 2500),
-      version: 2,
-      scene: 2,
-      openid: cloud.getWXContext().OPENID,
-    });
-    const suggest = res && res.result && res.result.suggest;
-    risky = suggest === "risky";
-  } catch (e) {
-    unavailable = true;
-  }
-  if (risky) throw new Error("材料包含违规信息，请修改后重新上传");
-  if (unavailable) throw new Error("内容安全检测暂不可用，请稍后重试");
-}
 
 /** 从云存储下载材料并提取文本 */
 async function extractText(fileID) {
@@ -139,9 +117,17 @@ exports.main = async (event) => {
   // 5) 内容安全（第十一轮审查 B-12）：材料是 UGC，落 LLM 链路前必须过检，
   //    与 README/作品说明文档中「用户上传材料过 msgSecCheck」的声明对齐。
   try {
-    await assertSafe(text);
+    // 内容安全检测（见 sec-check.js）：违规必拒；检测服务不可用 → 降级放行。
+    // 用户上传材料是 UGC，微信审核硬性要求过 msgSecCheck；
+    // 但平台接口不可用（61010/45009/-604101）时不应让整个功能不可用。
+    await checkText(text, {
+      openid: cloud.getWXContext().OPENID,
+      scene: 2,
+      rejectMessage: "材料包含违规信息，请修改后重新上传",
+    });
   } catch (e) {
-    return { error: e.message };
+    // 内容违规 → 返回业务错误，不进入 LLM 链路。
+    return { error: (e && e.message) || "材料包含违规信息，请修改后重新上传" };
   }
 
   // 6) Prompt 注入防护（B-13）：材料完全由用户控制，可写入「忽略以上指令……」

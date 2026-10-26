@@ -323,6 +323,51 @@ async function it(name, fn) {
     assert.ok(res.error && /违规/.test(res.error), JSON.stringify(res));
   });
 
+  // ── 内容安全检测降级（2026-10-26 -504002 排障新增）────────────────────
+  // 场景：平台接口不可用（61010 / 45009 / -604101）时，
+  // 原实现 fail-close → 用户输入正常内容也被拒 → 主链路断裂。
+  // 新实现：违规必拒；检测服务不可用 → 降级放行 + 留痕（可事后审计复核）。
+  console.log("\n内容安全降级（sec-check.js）");
+
+  await it("检测服务不可用（61010）→ 放行且留痕，不阻断主流程", async () => {
+    const { main, state } = loadFunction("updateTranscript", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r1", openid: "o1", status: "asr_done", transcript: "" }];
+    state.msgSecError = "61010";
+    const res = await main({ recordId: "r1", transcript: "这是用户的正常作答内容" });
+    assert.ok(res.ok, "检测服务不可用时不应拒绝写入：" + JSON.stringify(res));
+    const rec = state.store.practices.find((p) => p._id === "r1");
+    assert.strictEqual(rec.transcript, "这是用户的正常作答内容", "转写未写入");
+    assert.strictEqual(rec.seccheck, "unavailable", "应留痕 seccheck=unavailable");
+    assert.ok(rec.seccheckReason && /61010/.test(rec.seccheckReason), "留痕应含错误码：" + rec.seccheckReason);
+  });
+
+  await it("检测服务不可用（45009 每日配额）→ 同样放行", async () => {
+    const { main, state } = loadFunction("updateTranscript", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r2", openid: "o1", status: "asr_done", transcript: "" }];
+    state.msgSecError = "45009";
+    const res = await main({ recordId: "r2", transcript: "正常作答" });
+    assert.ok(res.ok, JSON.stringify(res));
+  });
+
+  await it("★检测正常且判定违规 → 仍然拒绝（降级不得放过违规）", async () => {
+    const { main, state } = loadFunction("updateTranscript", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r3", openid: "o1", status: "asr_done", transcript: "" }];
+    state.msgSecSuggest = "risky";
+    const res = await main({ recordId: "r3", transcript: "违规内容" });
+    assert.ok(res.error === undefined || /违规/.test(String(res.error || "")), "违规内容未被拒绝：" + JSON.stringify(res));
+    const rec = state.store.practices.find((p) => p._id === "r3");
+    assert.strictEqual(rec.transcript, "", "违规内容不应写入");
+  });
+
+  await it("检测通过 → seccheck=pass", async () => {
+    const { main, state } = loadFunction("updateTranscript", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r4", openid: "o1", status: "asr_done", transcript: "" }];
+    const res = await main({ recordId: "r4", transcript: "正常作答" });
+    assert.ok(res.ok, JSON.stringify(res));
+    const rec = state.store.practices.find((p) => p._id === "r4");
+    assert.strictEqual(rec.seccheck, "pass", "应标记 seccheck=pass");
+  });
+
   // ----------------------------------------------------------- analyze 配额
   console.log("\nanalyze（每日评估配额 B-15）");
 

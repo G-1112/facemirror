@@ -1,6 +1,7 @@
 // 语音识别（FR-05）：云存储音频 → 腾讯云 ASR 录音文件识别 → 带时间戳的转写文本
 // 未配置腾讯云凭证时进入 mock 模式，返回空转写，由用户手动输入（FR-06 兜底）。
 const cloud = require("wx-server-sdk");
+const { checkText } = require("./sec-check");
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
@@ -70,27 +71,6 @@ async function peekQuota(openid) {
     console.warn("quota peek failed:", e.message);
     return { ok: true };
   }
-}
-
-/** 服务端内容安全检测：违规或接口异常都拒绝落库（fail-close） */
-async function assertSafe(text) {
-  if (!text || !text.trim()) return;
-  let risky = false;
-  let unavailable = false;
-  try {
-    const res = await cloud.openapi.security.msgSecCheck({
-      content: text.slice(0, 2500),
-      version: 2,
-      scene: 2,
-      openid: cloud.getWXContext().OPENID,
-    });
-    const suggest = res && res.result && res.result.suggest;
-    risky = suggest === "risky";
-  } catch (e) {
-    unavailable = true;
-  }
-  if (risky) throw new Error("内容包含违规信息，请修改后重试");
-  if (unavailable) throw new Error("内容安全检测暂不可用，请稍后重试");
 }
 
 /** 把 fileID 转为临时可访问 URL */
@@ -259,12 +239,37 @@ exports.main = async (event) => {
       transcript = parsed.transcript;
       sentences = parsed.sentences;
       // 内容安全（审计修复 B-02）：ASR 结果落库前必须过检测
-      await assertSafe(transcript);
+      // 违规必拒；检测服务不可用（61010/45009/-604101）→ 降级放行并留痕。
+      // 原实现 fail-close：平台接口一挂，用户正常录音也会被拒
+      // → 「录音 → ASR → 报告」主链路直接断裂。
+      let sec;
+      try {
+        sec = await checkText(transcript, {
+          openid: cloud.getWXContext().OPENID,
+          scene: 2,
+          rejectMessage: "内容包含违规信息，请修改后重试",
+        });
+      } catch (e) {
+        // 内容违规 → 返回业务错误，不落库。
+        // （抛异常会被包装成 errCode -504002「云函数执行失败」，语义不准确）
+        return { error: (e && e.message) || "内容包含违规信息，请修改后重试" };
+      }
+      if (sec.degraded) {
+        // 留痕：供事后审计复核
+        try {
+          await db.collection("practices").doc(recordId).update({
+            data: { seccheck: "unavailable", seccheckReason: sec.reason },
+          });
+        } catch (_) {
+          // 留痕失败不阻断主流程
+        }
+      }
     }
   } catch (e) {
     console.warn("ASR failed:", e.message);
-    // 内容违规 / 内容安全不可用：不落库，直接回传原因
-    if (/违规|内容安全/.test(e.message)) return { error: e.message };
+    // 内容违规：不落库，直接回传原因。
+    // （内容安全检测**不可用**已在上方降级放行，不再走这个分支）
+    if (/违规/.test(e.message || "")) return { error: e.message };
     needManual = true;
   }
 

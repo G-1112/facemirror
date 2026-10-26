@@ -107,8 +107,12 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 
 > **两个易踩的坑（都已处理，别改回去）**：
 > 1. `asr` / `genQuestions` / `updateTranscript` 会调用 `security.msgSecCheck`，
->    必须在各自目录的 `config.json` 里声明 `permissions.openapi`，否则报 `-604101`，
->    `assertSafe` 走 fail-close → **转写会全失败**。该配置有 10 分钟缓存，刚上传即报错请等一会儿。
+>    必须在各自目录的 `config.json` 里声明 `permissions.openapi`，否则报 `-604101`。
+>    该配置有 10 分钟缓存，刚上传即报错请等一会儿。
+>    → 2026-10-26 起改为**共享模块 `sec-check.js`**（三份同源副本）：
+>    **违规必拒**（UGC 审核硬要求）；**检测服务不可用则降级放行 + 留痕**
+>    （`seccheck:"unavailable"` / `seccheckReason`），不再让平台接口故障
+>    把「录音 → 转写 → 评估 → 报告」整条主链路卡死。详见《真机攻坚手册》§9.1。
 > 2. 超时**无法**在 `config.json` 设。部署后须去云开发控制台把 `asr` / `analyze` 改成 **60 秒**，
 >    否则长音频会被默认超时强杀。
 >
@@ -131,6 +135,14 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 > 本项目 **10 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` timeout 60 /
 > runtime Nodejs16.13，依赖 `wx-server-sdk ~2.6.3` 完整）。
 > 所以 `-504002` 一律按「**云函数内部抛了异常**」处理 —— 去 `message:` 字段和云函数日志里找真因。
+>
+> **📌 本项目实例（2026-10-26）**：`updateTranscript` 报 `-504002`，
+> 真实原因在云函数日志里：`msgSecCheck` 调用失败。
+> 根因是**平台侧**的 `msgSecCheck` 不可用，不是本项目代码 bug ——
+> 最常见三个：`61010`（用户未在近两小时访问小程序，**开发者工具模拟器必现**）、
+> `45009`（**未上架小程序每日仅 100 次**调用配额）、
+> `-604101`（云调用权限声明后有约 10 分钟缓存期）。
+> 现已按上述策略降级放行，主链路不再被平台接口故障阻断。
 >
 > **一键确认云端缺哪个函数**（只读探测，不写库、不推送、不调 LLM）：
 > 临时在 `miniprogram/pages/question/question.ts` 的 `onLoad` 开头加
