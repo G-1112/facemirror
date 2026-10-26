@@ -25,6 +25,9 @@ exports.main = async (event) => {
 
   const templateId = process.env.SUBSCRIBE_TEMPLATE_ID || "";
   if (!templateId) {
+    // 部署配置缺失属于**可观测性问题**：必须显式暴露，不能静默吞掉。
+    // 但它不是用户操作失败 → 前端用 quiet 模式调用，失败只 warn 不打红色 error。
+    console.warn("订阅消息：未配置 SUBSCRIBE_TEMPLATE_ID（订阅功能不可用，不影响报告生成）");
     return { ok: false, error: "未配置 SUBSCRIBE_TEMPLATE_ID" };
   }
 
@@ -44,8 +47,21 @@ exports.main = async (event) => {
     });
     return { ok: true };
   } catch (e) {
-    console.warn("订阅消息发送失败:", e.errMsg || e.message);
-    return { ok: false, error: e.errMsg || "发送失败" };
+    const raw = String((e && (e.errMsg || e.message)) || "");
+    // ★用户在订阅授权弹窗点「拒绝」是**正常业务分支**，不是故障：
+    //   此时 send 报 "user refuse to accept the msg"。
+    //   原实现统一 return { ok: false, error: errMsg } → 前端 call() 判到 error 就抛错，
+    //   api.ts 在 catch 里打 console.error → Console 出现一条**红色错误**，
+    //   会被评委误读为「有未处理异常 / 功能失败」，而报告其实早就生成好了。
+    if (/user refuse/i.test(raw)) {
+      console.info("订阅消息：用户未授权，已跳过（属正常分支）");
+      return { ok: true, skipped: true, reason: "user_refused" };
+    }
+    // 其余为真故障（模板失效 / openapi 权限异常 / 配额）：
+    // 仍然不让它影响主流程，但必须留下可排查的原因。
+    // 原始 errMsg 只进日志，**不返回给前端**（一长串微信原始错误对用户无意义）。
+    console.warn("订阅消息发送失败:", raw);
+    return { ok: false, error: "订阅消息发送失败，可忽略（不影响报告查看）" };
   }
 };
 

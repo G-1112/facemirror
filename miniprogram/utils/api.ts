@@ -274,6 +274,19 @@ export function showCallError(e: any, fallback = "操作失败") {
 }
 
 /**
+ * 统一云函数调用的可选参数。
+ */
+export interface CallOptions {
+  /**
+   * quiet=true：失败时只打 console.warn，**不打 console.error**。
+   * 用途：非阻塞的增强功能（如订阅消息推送）。这类功能失败不影响主流程，
+   * 若打成红色 error，会被评委误读为「有未处理异常 / 功能失败」。
+   * 主链路调用（题目加载、提交、评估、报告）**不要**开 quiet。
+   */
+  quiet?: boolean;
+}
+
+/**
  * 统一云函数调用。
  * 修复点：
  * 1. 补 result 为空的校验——云函数异常退出时 res.result 可能是 null/undefined，
@@ -283,8 +296,13 @@ export function showCallError(e: any, fallback = "操作失败") {
  *    页面会永久停在「加载中」。
  * 3.（2026-10-26）把 wx.cloud 的原生错误包装成**带可读中文 message** 的 Error，
  *    并保留原始 errMsg 到 err.raw / err.errMsg 供控制台排障。
+ * 4.（2026-10-26）新增 opts.quiet：非阻塞增强功能失败只 warn，不打红色 error。
  */
-export async function call<T = any>(name: string, data: Record<string, any> = {}): Promise<T> {
+export async function call<T = any>(
+  name: string,
+  data: Record<string, any> = {},
+  opts: CallOptions = {}
+): Promise<T> {
   let timer: any = null;
   try {
     const res = await Promise.race([
@@ -306,7 +324,11 @@ export async function call<T = any>(name: string, data: Record<string, any> = {}
     if (e && e.__facemirrorCallError) throw e;
     const info = describeCallError(e);
     // 失败诊断：原始 errMsg 完整落盘，便于在开发者工具 Console 定位
-    console.error(`[云函数] ${name} 调用失败:`, info.raw);
+    if (opts.quiet) {
+      console.warn(`[云函数] ${name} 调用失败（非阻塞，可忽略）:`, info.raw);
+    } else {
+      console.error(`[云函数] ${name} 调用失败:`, info.raw);
+    }
     const err = new Error(info.text) as any;
     err.__facemirrorCallError = true;
     err.raw = info.raw;

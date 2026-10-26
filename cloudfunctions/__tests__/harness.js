@@ -170,7 +170,15 @@ function loadFunction(fnName, opts = {}) {
         },
       },
       subscribeMessage: {
+        // state.subscribeError 可配置为错误消息 → 桩会抛异常（模拟订阅消息发送失败）
+        //   典型值："user refuse to accept the msg"（用户点「拒绝」，属正常分支）
+        //   其他值（如 "template id is invalid"）→ 真故障分支
         async send(payload) {
+          if (state.subscribeError) {
+            const e = new Error(state.subscribeError);
+            e.errMsg = "openapi.subscribeMessage.send:fail " + state.subscribeError;
+            throw e;
+          }
           state.sent.push(payload);
           return { errCode: 0 };
         },

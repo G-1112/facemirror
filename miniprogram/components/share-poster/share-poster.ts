@@ -3,24 +3,24 @@
 
 import { createNavGuard, NavGuard } from "../../utils/nav-guard";
 
-/** 取设备像素比（wx.getSystemInfoSync 自 2.20.1 起停止维护，优先用 getDeviceInfo）。
+/** 取设备像素比。
+ *  wx.getSystemInfoSync 自基础库 2.20.1 起停止维护 → 改用 wx.getWindowInfo()。
+ *  2026-10-26 再修：删掉废弃接口的降级分支。① getSystemInfoSync 已废弃（会打 deprecation 警告）；
+ *  ② libVersion=3.6.0，getWindowInfo 自 2.20.1 起可用 ⇒ 原降级分支永远走不到，是死代码；
+ *  ③ 官方 typings 中 DeviceInfo 不含 pixelRatio，只有 WindowInfo 含。
  *  注：小程序组件文件的 TS 处于全局作用域（未开 module），
  *  同名函数会与其他文件冲突，故用独立命名隔离。 */
 const POSTER_PX_RATIO = (() => {
   const get = () => {
     try {
-      const info = (wx as any).getDeviceInfo ? (wx as any).getDeviceInfo() : null;
+      const info = wx.getWindowInfo();
       if (info && typeof info.pixelRatio === "number" && info.pixelRatio > 0) {
         return info.pixelRatio;
       }
     } catch (_) {
-      // 降级
+      // 取不到窗口信息：用默认像素比兜底
     }
-    try {
-      return wx.getSystemInfoSync().pixelRatio || 2;
-    } catch (_) {
-      return 2;
-    }
+    return 2;
   };
   return get;
 })();

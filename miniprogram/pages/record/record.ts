@@ -522,7 +522,10 @@ Page({
       // 评估失败（未登录 / 配额超限 / 无权限）也会跳转结果页，
       // 用户看到空白报告页且不知原因。改用 callChecked 抛出真实错误。
       await callChecked("analyze", { recordId });
-      call("finalize", { recordId }).catch(() => {}); // 订阅消息，非阻塞
+      // 订阅消息是**非阻塞的增强功能**：报告此刻已生成完毕，推送失败不影响用户。
+      // 用 quiet 模式 → 失败只 warn，不在 Console 打红色 error（避免被误读为功能失败）。
+      // 云函数侧也已把「用户拒绝授权」识别为正常分支并返回 ok:true。
+      call("finalize", { recordId }, { quiet: true }).catch(() => {});
       wx.hideLoading();
       if (!this.alive) return; // 页面已卸载，不再跳转
       // 修复（2026-10-26 状态机核查）：原实现只传了 url，没有 fail 回调。

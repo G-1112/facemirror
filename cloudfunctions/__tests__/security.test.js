@@ -94,6 +94,37 @@ async function it(name, fn) {
     assert.ok(!res.ok && /TEMPLATE_ID/.test(res.error), JSON.stringify(res));
   });
 
+  // ★2026-10-26 新增：订阅消息是**非阻塞增强功能**，它的失败分支必须分清
+  //   「用户拒绝（正常）」与「真故障」，否则前端会把它当云函数调用失败，
+  //   在 Console 打出一条红色 error，被误读为「有未处理异常 / 功能失败」。
+  await it("用户拒绝订阅授权 → 正常分支，不当作失败（不触发前端红字）", async () => {
+    process.env.SUBSCRIBE_TEMPLATE_ID = "tpl";
+    const { main, state } = loadFunction("finalize", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r1", openid: "o1", status: "done" }];
+    state.subscribeError = "user refuse to accept the msg";
+    const res = await main({ recordId: "r1" });
+    // 关键：ok 必须为 true —— 否则前端 call() 会判到 error 并打 console.error
+    assert.strictEqual(res.ok, true, JSON.stringify(res));
+    assert.strictEqual(res.skipped, true, JSON.stringify(res));
+    assert.strictEqual(res.reason, "user_refused", JSON.stringify(res));
+    assert.ok(!res.error, "用户拒绝不应返回 error 字段");
+  });
+
+  await it("订阅发送真故障 → 明确报错但不对外暴露微信原始 errMsg 噪音", async () => {
+    process.env.SUBSCRIBE_TEMPLATE_ID = "tpl";
+    const { main, state } = loadFunction("finalize", { OPENID: "o1" });
+    state.store.practices = [{ _id: "r1", openid: "o1", status: "done" }];
+    state.subscribeError = "template id is invalid";
+    const res = await main({ recordId: "r1" });
+    assert.strictEqual(res.ok, false, JSON.stringify(res));
+    assert.ok(res.error && res.error.length > 0, "真故障必须给出可读原因");
+    assert.ok(
+      !/openapi\.subscribeMessage\.send:fail/.test(res.error),
+      `不应把微信原始 errMsg 透给前端: ${res.error}`
+    );
+    assert.ok(/可忽略/.test(res.error), `错误文案应说明不影响主流程: ${res.error}`);
+  });
+
   // ----------------------------------------------------------------------- asr
   console.log("\nasr（配额原子性 B-09）");
 

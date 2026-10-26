@@ -2,26 +2,25 @@
 // 数据源：report.radar = [内容, 结构, 表达, 节奏, 专业度]（各 1-5 分）
 
 /** 取设备像素比。
- *  修复：原先用 wx.getSystemInfoSync()，该接口自基础库 2.20.1 起已停止维护，
- *  官方推荐改用 wx.getDeviceInfo()；此处做兼容降级，取不到时用 2。
+ *  修复：原先用 wx.getSystemInfoSync()，该接口自基础库 2.20.1 起已停止维护。
+ *  2026-10-26 再修：改用 wx.getWindowInfo() 并删掉废弃接口的降级分支。
+ *  原因：① getSystemInfoSync 已废弃，被调用会打出 deprecation 警告；
+ *  ② 本项目 libVersion=3.6.0，而 getWindowInfo 自 2.20.1 起可用 ⇒ 原「降级分支」永远走不到，是死代码；
+ *  ③ 官方 typings 中 DeviceInfo **不含** pixelRatio，WindowInfo 才含（类型层面直接报错，强制用对 API）。
+ *  取不到时用默认值 2（Canvas 少一个像素比只会轻微模糊，不影响功能）。
  *  注：小程序组件文件的 TS 处于全局作用域（未开 module），
  *  同名函数会与其他文件冲突，故用随机命名空间隔离。 */
 const RADAR_PX_RATIO = (() => {
   const get = () => {
     try {
-      const info = (wx as any).getDeviceInfo ? (wx as any).getDeviceInfo() : null;
+      const info = wx.getWindowInfo();
       if (info && typeof info.pixelRatio === "number" && info.pixelRatio > 0) {
         return info.pixelRatio;
       }
     } catch (_) {
-      // 忽略：降级到 getSystemInfoSync
+      // 取不到窗口信息：用默认像素比兜底
     }
-    try {
-      const sys = wx.getSystemInfoSync();
-      return sys.pixelRatio || 2;
-    } catch (_) {
-      return 2;
-    }
+    return 2;
   };
   return get;
 })();

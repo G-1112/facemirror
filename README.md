@@ -283,7 +283,7 @@ this._guard.dispose();
 | `tests/share_poster_save_button.test.js` | 海报「保存到相册」**成功/失败/销毁三条解锁路径** | 7 场景 / 13 断言 |
 | `tests/record_state_machine.test.js` | 录音页 8 态状态机（每个状态的出口 + 失败路径自愈） | 13 场景 / 48 断言 |
 
-> 全量口径：`npm test` → **11 个测试文件 / 297 条断言 / 68 个场景**，失败 0；
+> 全量口径：`npm test` → **11 个测试文件 / 299 条断言 / 68 个场景**，失败 0；
 > 数字可用 `node scripts/count_assertions.js` 一键复现（脚本直接读 `package.json` 的
 > test 列表，不会与实际测试文件漂移）。
 
@@ -429,7 +429,27 @@ start:fail api scope is not declared in the privacy agreement   // errno 112
 - 用户上传材料与转写文本过 `security.msgSecCheck` 内容安全检测（审核硬性要求）；
 - 仅通过 `wx.login` 获取 openid，不强制手机号授权；
 - `app.json` 已声明 `"__usePrivacyCheck__": true`（隐私接口检查生效）；
+- ⚠️ `app.json` **故意不声明** `permission.scope.record` —— 该字段只支持位置类接口，
+  声明录音权限会被判为「无效的 app.json permission」并在 Console 刷警告。
+  录音权限的正确路径是：mp 后台《用户隐私保护指引》声明「麦克风」+ 运行时官方隐私弹窗；
 - 含隐私协议（提交审核前需补充完整版）。
+
+### 📋 提审/录屏前 · Console 自检清单
+
+演示视频与提审截图里 Console 出现红色 error 会被直接解读为「功能有未处理异常」。
+跑完一遍主链路后，按此清单核对：
+
+| Console 现象 | 含义 | 本项目处置 |
+|---|---|---|
+| 🔴 `【云函数】xxx 调用失败:` | 主链路云函数真失败 | **必须为 0**。出现即为真问题，按 errMsg 排查 |
+| 🔴 `openapi.subscribeMessage.send:fail user refuse...` | 用户在订阅弹窗点了「拒绝」，**正常分支** | 已修：`finalize` 返回 `ok:true`，前端 `quiet` 模式只 warn |
+| 🟡 `无效的 app.json permission["scope.record"]` | `app.json` 声明了不支持的权限项 | 已修：删除 `permission` 字段 |
+| 🟡 `wx.getSystemInfoSync is deprecated` | 仍调用已废弃接口 | 已修：改用 `wx.getWindowInfo()` |
+| 🟡 `[worker] reportRealtimeAction: fail not support` | **开发者工具内部行为** | 可忽略，仓库内无 `reportRealtimeAction` 代码 |
+| 🟡 `resource ... was preloaded using link preload` | IDE 内部提示 | 可忽略 |
+
+> 判定口径：**真问题只有「红色 error」和「主链路卡住」**。黄色警告里凡是本项目代码引起的
+> 都已修掉，剩下 IDE 内部提示可忽略。
 
 ---
 
