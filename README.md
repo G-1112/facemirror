@@ -60,6 +60,7 @@ facemirror/
 npm ci          # 严格按 package-lock.json 安装（推荐）
 npm run tsc     # 等价于 tsc --noEmit
 npm test        # 云函数安全/越权回归测试（无需开发者工具，node 直跑）
+node scripts/count_assertions.js   # 统计各测试文件断言数（复现本文档中的测试口径）
 
 # 若需安装云函数的本地依赖（一般不必，云端会自动装）
 for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
@@ -274,13 +275,17 @@ this._guard.dispose();
 
 **对应回归测试**：
 
-| 测试 | 覆盖 | 断言数 |
+| 测试 | 覆盖 | 场景 / 断言 |
 |---|---|---|
-| `tests/nav_guard.test.js` | 守卫本身（自动过期 / dispose / 可控时钟边界） | 7 场景 |
-| `tests/index_start_button.test.js` | 首页按钮可点性 + WXML 铁律 | 6 场景 |
-| `tests/question_go_button.test.js` | 出题页「去作答」+「换一题」+ 业务前置分流 | 7 场景 |
-| `tests/share_poster_save_button.test.js` | 海报「保存到相册」**成功/失败/销毁三条解锁路径** | 7 场景 |
-| `tests/record_state_machine.test.js` | 录音页 8 态状态机（每个状态的出口 + 失败路径自愈） | 12 场景 |
+| `tests/nav_guard.test.js` | 守卫本身（自动过期 / dispose / 可控时钟边界） | 7 场景 / 16 断言 |
+| `tests/index_start_button.test.js` | 首页按钮可点性 + WXML 铁律 | 6 场景 / 20 断言 |
+| `tests/question_go_button.test.js` | 出题页「去作答」+「换一题」+ 业务前置分流 | 7 场景 / 29 断言 |
+| `tests/share_poster_save_button.test.js` | 海报「保存到相册」**成功/失败/销毁三条解锁路径** | 7 场景 / 13 断言 |
+| `tests/record_state_machine.test.js` | 录音页 8 态状态机（每个状态的出口 + 失败路径自愈） | 13 场景 / 48 断言 |
+
+> 全量口径：`npm test` → **11 个测试文件 / 297 条断言 / 68 个场景**，失败 0；
+> 数字可用 `node scripts/count_assertions.js` 一键复现（脚本直接读 `package.json` 的
+> test 列表，不会与实际测试文件漂移）。
 
 > ⚠️ 组件（`Component()`）的 TS 类型**不接受顶层自定义字段**，
 > 守卫要挂到实例上：`(this as any)._guard = createNavGuard(...)`。
