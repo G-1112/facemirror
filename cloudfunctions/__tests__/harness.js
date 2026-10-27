@@ -11,6 +11,11 @@
 const path = require("path");
 const Module = require("module");
 
+// Module._load 常驻补丁的共享引用（见 loadFunction 内注释）：
+// activeCloudMock = 当前测试的 wx-server-sdk mock；activeModules = 当前 npm 依赖桩表。
+let activeCloudMock = null;
+let activeModules = null;
+
 /** 简易内存「集合」 */
 function makeCollection(store, name, state) {
   /**
@@ -147,6 +152,8 @@ function resetMocks(state) {
   state.warnings = [];
   // missingCollections：模拟「集合未创建」（访问时抛 -502005）
   state.missingCollections = new Set();
+  // modules：npm 依赖桩（如 "pdf-parse"），key 为模块名，value 为 require 返回值
+  state.modules = {};
 }
 
 /**
@@ -162,6 +169,8 @@ function loadFunction(fnName, opts = {}) {
     warnings: [],
     // 模拟「集合未创建」：测试里 state.missingCollections.add("interviews")
     missingCollections: new Set(),
+    // npm 依赖桩：state.modules["pdf-parse"] = async (buf) => ({ text: "..." })
+    modules: {},
   };
 
   const dbCommand = {
@@ -246,11 +255,25 @@ function loadFunction(fnName, opts = {}) {
     if (request === "wx-server-sdk") return "wx-server-sdk";
     return origResolve.call(this, request, ...rest);
   };
-  const origLoad = Module._load;
-  Module._load = function (request, ...rest) {
-    if (request === "wx-server-sdk") return cloudMock;
-    return origLoad.call(this, request, ...rest);
-  };
+  // npm 依赖桩（pdf-parse 等）：函数可能在「调用时」才 require（如 parseResume 的
+  // extractPdfText 在 main() 内部 require），因此 Module._load 补丁必须常驻、
+  // 不能随 loadFunction 返回而卸载 —— 改为模块级安装一次，通过共享引用
+  // activeModules 切换当前测试的桩表；否则 finally 恢复后调用期 require 走
+  // 真实模块 →「组件未安装」假分支（2026-10-27 实测踩坑）。
+  if (!Module.__facemirrorStubPatched) {
+    Module.__facemirrorStubPatched = true;
+    const origLoad = Module._load;
+    Module._load = function (request, ...rest) {
+      if (request === "wx-server-sdk" && activeCloudMock) return activeCloudMock;
+      // npm 依赖桩：pdf-parse 等三方包未本地安装也能测其分支
+      if (activeModules && Object.prototype.hasOwnProperty.call(activeModules, request)) {
+        return activeModules[request];
+      }
+      return origLoad.call(this, request, ...rest);
+    };
+  }
+  activeCloudMock = cloudMock;
+  activeModules = state.modules;
 
   delete require.cache[fnPath];
   delete require.cache[secCheckPath];
@@ -259,7 +282,6 @@ function loadFunction(fnName, opts = {}) {
     mod = require(fnPath);
   } finally {
     Module._resolveFilename = origResolve;
-    Module._load = origLoad;
   }
 
   return { main: mod.main, state };

@@ -4,7 +4,7 @@
     <view class="upload-icon">📄</view>
     <view wx:if="{{!uploading}}">
       <view class="upload-title">上传你的简历 / 项目文档 / 论文摘要</view>
-      <view class="upload-desc">AI 会像评委一样，针对你的材料生成追问</view>
+      <view class="upload-desc">支持 txt / md / docx / pdf 格式，AI 会针对材料生成追问</view>
     </view>
     <view wx:else>
       <view class="upload-title">正在解析「{{materialName}}」并生成追问…</view>

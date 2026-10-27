@@ -522,8 +522,28 @@ async function testCloud() {
     const noFile = await main({});
     check("缺文件时报错", !!noFile.error, JSON.stringify(noFile));
 
-    const badExt = await main({ fileID: "cloud://env/resumes/o_res/1-resume.pdf" });
-    check("pdf 被格式白名单拒绝", !!badExt.error && badExt.error.includes("仅支持"), JSON.stringify(badExt));
+    const badExt = await main({ fileID: "cloud://env/resumes/o_res/1-resume.exe" });
+    check("白名单外格式（exe）被拒", !!badExt.error && badExt.error.includes("仅支持"), JSON.stringify(badExt));
+
+    // ── PDF 支持（2026-10-27）：pdf 进入解析，依赖桩模拟 pdf-parse ──
+    const pdfId = "cloud://env/resumes/o_res/1-resume.pdf";
+    state.modules["pdf-parse"] = async () => ({
+      text: "教育背景：太原科技大学 软件工程 本科\n项目经历：分布式训练平台，QPS 提升 40%，使用 FastAPI 与 Redis\n技能：Python FastAPI Redis",
+    });
+    const okPdf = await main({ fileID: pdfId });
+    check("pdf 走解析并成功产出简历", !!okPdf.resume, JSON.stringify(okPdf).slice(0, 120));
+
+    // 扫描件（抽取文字 < 30 字）→ 明确报错指引
+    state.modules["pdf-parse"] = async () => ({ text: "扫描件" });
+    const scanned = await main({ fileID: pdfId });
+    check("扫描件 PDF 明确报错并给指引", !!scanned.error && scanned.error.includes("扫描件"), JSON.stringify(scanned));
+
+    // pdf-parse 抛异常 → 归入解析失败（带原始原因）
+    state.modules["pdf-parse"] = async () => {
+      throw new Error("bad pdf structure");
+    };
+    const brokenPdf = await main({ fileID: pdfId });
+    check("损坏 PDF 报解析失败", !!brokenPdf.error, JSON.stringify(brokenPdf).slice(0, 120));
 
     const notMine = await main({ fileID: "cloud://env/resumes/o_other/1-resume.txt" });
     check("非本人上传的文件被拒", !!notMine.error && notMine.error.includes("无权访问"), JSON.stringify(notMine));

@@ -31,7 +31,7 @@ import {
 } from "../../utils/interview";
 
 /** 简历上传格式白名单：必须与服务端 parseResume 的 ALLOWED_EXT_RE 一致 */
-const RESUME_EXTENSIONS = ["txt", "md", "docx"];
+const RESUME_EXTENSIONS = ["txt", "md", "docx", "pdf"];
 
 /** 简历的**扁平**视图类型（数组字段已 join 成字符串，模板不能深层访问） */
 interface ResumeView {

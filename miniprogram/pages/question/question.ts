@@ -176,10 +176,10 @@ Page({
     wx.chooseMessageFile({
       count: 1,
       type: "file",
-      // 修复（第十一轮审查 B-11）：服务端 extractText 只能解析 docx 与纯文本，
-      // 原先放行 pdf 会被按 UTF-8 解码成乱码喂给 LLM，生成无意义追问。
-      // 客户端收敛到服务端真实支持的三种格式（与服务端扩展名白名单一致）。
-      extension: ["txt", "md", "docx"],
+      // 格式白名单（2026-10-27）：服务端 extractText 支持 txt/md/docx/pdf，
+      // pdf 由服务端 pdf-parse 提取文字（扫描件会明确报错指引）。
+      // 客户端与服务端扩展名白名单保持一致。
+      extension: ["txt", "md", "docx", "pdf"],
       success: async (res) => {
         // 防御：极端情况下 tempFiles 可能为空数组，原实现直接取 [0].name 会抛错
         const file = res.tempFiles && res.tempFiles[0];

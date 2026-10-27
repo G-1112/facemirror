@@ -8,7 +8,7 @@ const { escapeForPrompt, scanInjection } = require("./injection");
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 /** 服务端真实可解析的格式白名单（与前端 chooseMessageFile 的 extension 保持一致） */
-const ALLOWED_EXT_RE = /\.(txt|md|docx)$/i;
+const ALLOWED_EXT_RE = /\.(txt|md|docx|pdf)$/i;
 /** 简历文本上限：超长截断，避免 token 爆炸与费用失控 */
 const MAX_RESUME_CHARS = 6000;
 
@@ -30,7 +30,24 @@ const PARSE_SYSTEM = `你是一个资深简历解析器。请把候选人简历�
 
 const PARSE_USER = (text) => `【简历原文】\n${text}`;
 
-/** 从云存储下载并提取文本（与 genQuestions 同款能力：docx 解包 / 纯文本） */
+/** PDF 文本抽取（与 genQuestions 同款能力；扫描件 → 明确报错） */
+async function extractPdfText(buf) {
+  let pdfParse;
+  try {
+    pdfParse = require("pdf-parse");
+  } catch (e) {
+    throw new Error("服务端 PDF 解析组件未安装，请联系维护者重新部署");
+  }
+  const res = await pdfParse(buf);
+  const text = (res && res.text) || "";
+  // 扫描件/图片版 PDF 抽取结果为空或极短 → 可操作指引，而不是「解析失败」
+  if (text.replace(/\s+/g, "").length < 30) {
+    throw new Error("PDF 可能是扫描件或图片版，无法提取文字，请改用 docx / txt 格式重新上传");
+  }
+  return text;
+}
+
+/** 从云存储下载并提取文本（与 genQuestions 同款能力：docx 解包 / PDF / 纯文本） */
 async function extractText(fileID) {
   const res = await cloud.downloadFile({ fileID });
   const buf = res.fileContent;
@@ -46,6 +63,9 @@ async function extractText(fileID) {
     const texts = [];
     xml.replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g, (_, t) => texts.push(t));
     return texts.join("");
+  }
+  if (lower.endsWith(".pdf")) {
+    return extractPdfText(buf);
   }
   return buf.toString("utf-8");
 }
@@ -255,9 +275,9 @@ exports.main = async (event) => {
   const { fileID } = event;
   if (!fileID) return { error: "缺少简历文件" };
 
-  // 格式白名单：服务端只能解析 docx 与纯文本，pdf 会被当 UTF-8 解成乱码
+  // 格式白名单：txt/md 纯文本、docx（xml 解压）、pdf（服务端 pdf-parse 提取；扫描件提取不到文字会明确报错）
   if (!ALLOWED_EXT_RE.test(String(fileID))) {
-    return { error: "仅支持 .txt / .md / .docx 格式的简历" };
+    return { error: "仅支持 .txt / .md / .docx / .pdf 格式的简历" };
   }
 
   // 归属校验：材料必须由当前用户上传（cloudPath 含 /{openid}/），否则可下载他人简历
@@ -275,8 +295,13 @@ exports.main = async (event) => {
     text = await extractText(fileID);
   } catch (e) {
     console.warn("简历文本提取失败:", e.message);
+    // 透传可操作的原始原因（扫描件指引 / PDF 组件未安装），未知异常才用兜底文案
+    const msg = (e && e.message) || "";
+    if (msg.includes("扫描件") || msg.includes("组件未安装")) {
+      return { error: `简历解析失败：${msg}` };
+    }
     // 区分「文件坏了」和「格式不对」，让用户知道该换文件还是改格式
-    return { error: "简历解析失败：文件无法读取，请确认是有效的 .txt/.md/.docx 文件" };
+    return { error: "简历解析失败：文件无法读取，请确认是有效的 .txt/.md/.docx/.pdf 文件" };
   }
 
   if (!text || !text.trim()) {

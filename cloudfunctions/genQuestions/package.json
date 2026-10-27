@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "wx-server-sdk": "~2.6.3",
-    "jszip": "^3.10.1"
+    "jszip": "^3.10.1",
+    "pdf-parse": "^1.1.1",
+    "wx-server-sdk": "~2.6.3"
   }
 }

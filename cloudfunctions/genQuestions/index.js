@@ -16,10 +16,27 @@ const GEN_SYSTEM = `你将扮演一位严格的面试官/答辩评委。基于�
 
 const GEN_USER = (text) => `【材料】\n${text}`;
 
-// 服务端真实可解析的格式白名单（第十一轮审查 B-11）：
-// extractText 只实现了 docx 解包与纯文本读取，客户端曾放行 pdf，
-// pdf 会被按 UTF-8 解码成乱码喂给 LLM。两侧白名单必须一致。
-const ALLOWED_EXT_RE = /\.(txt|md|docx)$/i;
+// 服务端真实可解析的格式白名单（第十一轮审查 B-11，2026-10-27 新增 pdf）：
+// docx 解包 + 纯文本 + PDF 文本抽取（pdf-parse，远端 npm 安装）。
+// ⚠️ 两侧白名单必须一致：客户端 chooseMessageFile 的 extension 数组同步放行 pdf。
+const ALLOWED_EXT_RE = /\.(txt|md|docx|pdf)$/i;
+
+/** PDF 文本抽取（pdf-parse；扫描件/图片版 PDF 抽不出文字 → 明确报错） */
+async function extractPdfText(buf) {
+  let pdfParse;
+  try {
+    pdfParse = require("pdf-parse");
+  } catch (e) {
+    throw new Error("服务端 PDF 解析组件未安装，请联系维护者重新部署");
+  }
+  const res = await pdfParse(buf);
+  const text = (res && res.text) || "";
+  // 扫描件/图片版 PDF 抽取结果为空或极短 → 给可操作指引而非「材料解析失败」
+  if (text.replace(/\s+/g, "").length < 30) {
+    throw new Error("PDF 可能是扫描件或图片版，无法提取文字，请改用 docx / txt 格式重新上传");
+  }
+  return text;
+}
 
 /** 从云存储下载材料并提取文本 */
 async function extractText(fileID) {
@@ -40,6 +57,10 @@ async function extractText(fileID) {
     const texts = [];
     xml.replace(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g, (_, t) => texts.push(t));
     return texts.join("");
+  }
+
+  if (lower.endsWith(".pdf")) {
+    return extractPdfText(buf);
   }
 
   // .txt / .md / 其他：按 UTF-8 文本处理
@@ -88,7 +109,7 @@ exports.main = async (event) => {
 
   // 2) 格式白名单：只接受服务端真实可解析的格式（B-11，与服务端 extractText 能力对齐）
   if (!ALLOWED_EXT_RE.test(String(fileID))) {
-    return { error: "仅支持 .txt / .md / .docx 文件" };
+    return { error: "仅支持 .txt / .md / .docx / .pdf 文件" };
   }
 
   // 3) 归属校验：材料必须由当前用户上传（cloudPath 约定含 /{openid}/）。
@@ -108,7 +129,7 @@ exports.main = async (event) => {
     text = await extractText(fileID);
   } catch (e) {
     console.warn("材料解析失败:", e.message);
-    return { error: "材料解析失败，请上传 .txt / .md / .docx 文件" };
+    return { error: (e && e.message) || "材料解析失败，请上传 .txt / .md / .docx / .pdf 文件" };
   }
 
   if (!text.trim()) return { error: "材料内容为空" };

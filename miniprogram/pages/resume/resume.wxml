@@ -25,7 +25,7 @@
   <block wx:if="{{step === 'upload'}}">
     <view class="card">
       <view class="card-title">上传你的简历</view>
-      <view class="card-desc">支持 {{'txt / md / docx'}} 格式。建议包含：教育背景、工作或实习经历、项目经历、比赛获奖、技能栈。</view>
+      <view class="card-desc">支持 {{'txt / md / docx / pdf'}} 格式。建议包含：教育背景、工作或实习经历、项目经历、比赛获奖、技能栈。</view>
       <button class="btn btn-primary" bindtap="onPickResume" hover-class="btn-hover">
         {{uploading ? '上传中…' : (parsing ? '解析中…' : '选择简历文件')}}
       </button>

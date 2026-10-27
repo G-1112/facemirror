@@ -317,9 +317,9 @@ async function it(name, fn) {
   // ------------------------------------------------------------- genQuestions
   console.log("\ngenQuestions（格式白名单 B-11 / 内容安全 B-12 / 注入防护 B-13）");
 
-  await it("不支持的扩展名被拒（pdf 假支持已收敛）", async () => {
+  await it("白名单外扩展名被拒（txt/md/docx/pdf 之外）", async () => {
     const { main } = loadFunction("genQuestions", { OPENID: "o1" });
-    const res = await main({ fileID: "cloud://env/materials/o1/1-a.pdf", scene: "interview" });
+    const res = await main({ fileID: "cloud://env/materials/o1/1-a.exe", scene: "interview" });
     assert.ok(res.error && /仅支持/.test(res.error), JSON.stringify(res));
   });
 

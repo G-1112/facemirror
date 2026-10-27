@@ -99,7 +99,9 @@
   border: 2rpx solid #bfdbfe;
   border-radius: 20rpx;
   padding: 26rpx 28rpx;
-  margin-top: 24rpx;
+  /* 2026-10-27：入口上移进 .mode-list，位于「自定义出题」卡正下方；
+     mode-card 自带 margin-bottom: 20rpx，这里补 4rpx 对齐标准卡片间距 */
+  margin-top: 4rpx;
 }
 .deep-left {
   flex: 1;
