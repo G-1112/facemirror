@@ -108,7 +108,8 @@ AppID             : wx5f84fd45875f4924
 ### 2.3 导入题库
 
 ```bash
-# 导入文件必须用 questions.import.json（JSON Lines，80 行）
+# 导入文件必须用 questions.import.json（JSON Lines，1382 行）
+# 集合内已有旧数据先全选删除，否则叠加重复
 # questions.json 是 JSON 数组，导入会得到 0 条
 ```
 
@@ -474,7 +475,7 @@ python scripts/deploy_cloud.py --check
 ```
 阶段0 体检
    ↓
-阶段1 开通环境 ──→ 阶段2 建 4 集合 + 权限 ──→ 2.3 导入 80 题
+阶段1 开通环境 ──→ 阶段2 建 5 集合 + 权限 ──→ 2.3 导入 1382 题
    ↓
 阶段3 部署 10 函数（config.json 已带 openapi 权限）──→ 3.3 asr/analyze 超时改 60s
    ↓

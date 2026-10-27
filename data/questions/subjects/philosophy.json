@@ -1,0 +1,602 @@
+[
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是哲学？哲学的基本问题是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "思维和存在的关系问题为什么是哲学的基本问题？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "请解释唯物主义与唯心主义的基本对立。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是形而上学？它研究什么问题？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是认识论？它与本体论的区别是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "伦理学的基本问题是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "请解释苏格拉底「认识你自己」这句箴言的含义。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "柏拉图的洞穴隐喻说明了什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "亚里士多德「四因说」的四种原因分别是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是中世纪经院哲学？它讨论的典型问题是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "笛卡尔「我思故我在」是如何论证的？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是理性主义？其近代代表人物有哪些？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是经验主义？其近代代表人物有哪些？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "康德所说的「先验」是什么意思？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是康德的「二律背反」？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "黑格尔辩证法的「正—反—合」三个环节是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是存在主义？其核心命题是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是现象学的「意向性」概念？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "孔子的核心思想是什么？请简述「仁」的含义。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "孟子的「性善论」是如何论证的？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "荀子的「性恶论」与孟子有什么不同？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "老子所说的「道」是什么含义？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "庄子的「逍遥游」表达了什么样的人生态度？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是「天人合一」？它在中国哲学中的地位如何？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "宋明理学中「理」与「气」的关系是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "朱熹与王阳明对「格物」的理解有何不同？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是功利主义？其代表人物有哪些？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是义务论（道义论）？它与功利主义的区别是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是逻辑学中的三段论？请举例说明。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是美学？美是主观的还是客观的？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "试比较柏拉图与亚里士多德在本体论立场上的差异。",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「奥卡姆的剃刀」原则的内容是什么？它有何方法论意义？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "培根的「四假相说」批判了什么样的认识障碍？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "霍布斯《利维坦》中社会契约论的基本思路是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "洛克的「白板说」与笛卡尔的天赋观念论争论的焦点是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "休谟对因果关系的怀疑是什么？它带来了什么哲学后果？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "康德的「哥白尼式革命」指的是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "康德是如何调和经验论与唯理论的？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "康德「绝对命令」的内容和特征是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解黑格尔「凡是现实的都是合乎理性的」这一命题？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "费尔巴哈对黑格尔思辨哲学的批判是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "马克思的实践概念如何超越了旧唯物主义？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解「哲学家们只是用不同的方式解释世界，而问题在于改变世界」？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "实践在马克思主义认识论中处于什么地位？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "尼采「上帝死了」宣告了什么？「重估一切价值」何所指？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "海德格尔对「存在」与「存在者」的区分是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解萨特「存在先于本质」？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "维特根斯坦前期与后期思想的转变体现在哪里？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "逻辑实证主义的「可证实性原则」是什么？它面临哪些困难？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "波普尔的证伪主义与逻辑实证主义的证实原则有何分歧？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "库恩「范式」与「范式转换」理论的核心内容是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "弗雷格对「涵义」与「指称」的区分是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "罗尔斯「无知之幕」的思想实验是什么？它要论证什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "诺齐克从哪些方面批评了罗尔斯的差别原则？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "功利主义的「幸福计算」面临哪些主要困难？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "电车难题揭示了规范伦理学中的什么张力？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "德性伦理学与现代规则伦理学的区别是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "中国哲学中关于「天人之际」的讨论主要涉及什么问题？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "名家「白马非马」的论证逻辑是什么？应如何评价？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "墨家「兼爱」「非攻」的思想内容是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "先秦儒法两家在治国理念上的根本分歧是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "董仲舒「天人感应」学说的内容及其历史影响是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "魏晋玄学「名教与自然」之辩讨论的核心问题是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "禅宗「不立文字」的主张蕴含了什么样的哲学立场？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "张载「气本论」的主要观点是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "程朱理学与陆王心学的根本分歧在哪里？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解王阳明的「知行合一」？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「格物致知」在朱熹与王阳明那里分别如何解读？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "明清之际黄宗羲、顾炎武、王夫之的思想转向体现在哪里？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是归纳问题？为什么说它难以彻底解决？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "自由意志与决定论的冲突是什么？哲学上有哪些主要回应？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是「他心问题」？通常有哪些回应思路？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「缸中之脑」思想实验想说明什么怀疑论处境？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "忒修斯之船揭示了什么哲学问题？常见的解决方案有哪些？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "心身问题中物理主义的基本主张及其困难是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "分析命题与综合命题的区分是什么？奎因如何挑战它？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「是」与「应当」的二分（事实与价值二分）是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "程序正义与实质正义的区别是什么？各举一例说明。",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "伯林对「消极自由」与「积极自由」的区分是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "盖梯尔问题对「知识是得到辩护的真信念」这一经典定义构成了什么挑战？主要的回应方案有哪些？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何评价蒯因对分析/综合两分的批判及其整体主义知识观？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解后期维特根斯坦的「语言游戏」与「家族相似」概念？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「中文屋」论证的内容是什么？它对强人工智能提出了什么挑战？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是「可能世界」语义学？它对模态逻辑和哲学分析有何意义？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是心灵哲学中的「随附性」概念？它在物理主义论证中起什么作用？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "摩尔指出的「自然主义谬误」是什么？它对元伦理学有何影响？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "科学实在论与反实在论之争的核心分歧是什么？你如何评价？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "海德格尔与胡塞尔在现象学方法上的分歧是什么？如何评价这一分歧的哲学后果？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解列维纳斯「他者」伦理学对西方本体论传统的挑战？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "阿尔都塞的「认识论断裂」是如何划分马克思思想时期的？这一划分有何争议？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解罗蒂对「镜式认识」的批判以及他所谈的「哲学的终结」？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "科斯嘉德的康德式建构主义如何回应「规范性来源」问题？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "柏格森对「绵延」与物理学时间的区分带来了什么哲学后果？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何评价中国哲学「合法性」之争？中国哲学应以什么方法研究？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「以中释西」与「以西释中」两种诠释路径各有什么得失？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "「象思维」作为中国哲学方法论的特点是什么？它与现代概念思维如何互补？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "如何理解马克思「人体解剖对于猴体解剖是一把钥匙」的方法论含义？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "围绕「李约瑟问题」的内在主义与外因主义解释各自的立场是什么？哲学上如何评价？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "试论历史唯物主义中「生产力—生产关系」原理的哲学结构及其当代争论。",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "哲学",
+"text": "什么是「休谟的叉」？它如何切分观念关系与事实问题？",
+"difficulty": "中等"
+}
+]

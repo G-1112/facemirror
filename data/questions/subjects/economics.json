@@ -1,0 +1,602 @@
+[
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是供给与需求？市场均衡是如何形成的？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是需求价格弹性？它有什么应用意义？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是机会成本？请举一个生活中的例子。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是边际效用递减规律？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是GDP？它与GNP的区别是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是通货膨胀？它通常如何衡量？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是失业率？摩擦性失业与结构性失业有什么区别？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是财政政策？什么是货币政策？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是比较优势？它与绝对优势有何不同？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是市场失灵？请举出两种典型情形。",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是外部性？正外部性和负外部性分别指什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是公共物品？为什么市场难以有效供给公共物品？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是消费者剩余和生产者剩余？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是完全竞争市场？它的前提假设有哪些？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是垄断？垄断为什么会带来效率损失？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是通货膨胀的再分配效应？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是利率？央行如何通过利率影响经济？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是汇率？汇率变动对进出口有什么影响？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是恩格尔系数？它反映了什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是基尼系数？如何用它衡量收入分配差距？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是边际消费倾向？它与乘数效应有什么关系？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是固定成本与可变成本？什么是规模经济？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是信息不对称？柠檬市场是如何形成的？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是道德风险与逆向选择？二者有何区别？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是沉没成本？它为什么不应影响理性决策？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是名义变量与实际变量？为什么要做价格平减？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是经济周期？它通常分为哪几个阶段？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是贸易顺差与贸易逆差？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是机会集合（预算约束线）？消费者如何在约束下做出选择？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是经济学中的「理性人」假设？它的局限是什么？",
+"difficulty": "简单"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "价格上限与价格下限（限价政策）分别会带来什么后果？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "税收的归宿由什么决定？供给弹性和需求弹性如何影响税负分摊？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是无谓损失？它如何在税收分析中出现？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "垄断厂商如何进行价格歧视？三级价格歧视的条件是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是寡头的古诺模型与伯川德模型？二者结论有何不同？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是囚徒困境？它如何解释企业间的价格战？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是纳什均衡？它为什么可能不是帕累托最优的？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是帕累托改进与帕累托最优？完全竞争市场为何能达到帕累托最优？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "科斯定理的内容是什么？产权界定如何解决外部性问题？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "庇古税与排污权交易在治理污染上有什么异同？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是委托—代理问题？激励机制设计如何缓解它？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是效率工资理论？为什么企业可能支付高于市场出清水平的工资？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是IS-LM模型？它如何描述产品市场与货币市场的均衡？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是菲利普斯曲线？短期与长期的菲利普斯曲线有何不同？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是奥肯定律？它描述了什么关系？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "凯恩斯主义与货币主义在政策主张上的核心分歧是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是流动性陷阱？它对货币政策有效性意味着什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是乘数效应？政府支出乘数的大小由什么决定？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是挤出效应？它在什么条件下更显著？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "李嘉图等价定理说的是什么？它的前提假设有何争议？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是索洛增长模型？长期增长由什么驱动？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是内生增长理论？它与索洛模型的关键区别是什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是刘易斯二元经济结构？「刘易斯拐点」意味着什么？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是比较优势陷阱？发展中国家如何突破它？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是购买力平价？它为什么适合做跨国收入比较？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "「不可能三角」指的是什么？它对货币政策与汇率制度选择有什么约束？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是结构性通胀与输入型通胀？治理思路有何不同？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是行为经济学的「损失厌恶」？它如何偏离标准理性选择模型？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是前景理论？它对期望效用理论构成了什么修正？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是制度经济学眼中的交易成本？它如何解释企业边界？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是蛛网模型？它解释了哪类市场的价格波动？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是计量的内生性问题？工具变量法如何应对它？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是双重差分法（DID）？它识别因果效应的关键假设是什么？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是断点回归设计？它在什么条件下能识别因果效应？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是选择性偏差？随机实验为什么被视为因果识别的基准？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "卢卡斯批判的核心内容是什么？它对宏观政策评价方法有何影响？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "真实经济周期理论如何解释经济波动？它受到哪些批评？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "新凯恩斯主义如何用价格黏性为宏观调控提供微观基础？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "「中等收入陷阱」的成因假说有哪些？如何用跨国数据检验？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是利率期限结构？预期理论与其经验异常如何解释？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "有效市场假说的三种形式是什么？行为金融学如何挑战它？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "明斯基时刻的含义是什么？它如何解释金融危机的形成机制？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是一般均衡与局部均衡？瓦尔拉斯均衡的存在性依赖哪些条件？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "阿罗不可能定理的内容是什么？它对社会选择理论有何含义？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是机制设计理论？显示原理在其中起什么作用？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "拍卖理论中，一级价格密封拍卖与二级价格密封拍卖的最优策略有何不同？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "信息经济学中的「信号传递」与「信息甄别」有何区别？各举一个模型。",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是动态不一致性？它如何支持央行独立性与规则型货币政策？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "如何看待数字平台的经济属性？双边市场定价与反垄断分析有何新特点？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "人口老龄化对储蓄、增长与养老金体系的宏观影响机制是什么？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "如何评价产业政策的有效性？相关的实证识别面临什么困难？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是「资源诅咒」？其形成机制与实证证据如何？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "环境库兹涅茨曲线假说的内容是什么？它受到哪些方法论批评？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "如何评价重商主义、古典学派到凯恩斯革命的经济思想史脉络？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "试比较哈耶克与兰格关于社会主义经济计算之辩的核心论点。",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是发展经济学的「大推进」理论？其与现实经验有何出入？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "金融摩擦如何放大宏观冲击？「金融加速器」机制是什么？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "零利率下限附近，非常规货币政策（量化宽松等）的传导渠道是什么？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "如何看待全球失衡与「特里芬难题」？它对国际货币体系意味着什么？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是洛伦兹曲线？它与基尼系数是什么关系？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "如何用供求弹性解释「谷贱伤农」现象？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是寻租行为？它为什么会造成效率损失？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是人力资本投资？教育的回报率通常如何估计？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是自然垄断？对这类行业通常采取什么管制方式？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是「破窗谬误」？它错在哪里？",
+"difficulty": "中等"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "双重差分法的「平行趋势」假设是什么？实践中如何检验？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "空间计量中的「溢出效应」是什么？如何识别与估计？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "央行数字货币可能对货币政策传导机制产生什么影响？",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "试比较「华盛顿共识」与东亚发展型国家实践在政策主张上的差异。",
+"difficulty": "困难"
+},
+{
+"scene": "interview",
+"category": "经济学",
+"text": "什么是国民收入中「劳动份额下降」？主要的解释假说有哪些？",
+"difficulty": "困难"
+}
+]

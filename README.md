@@ -27,7 +27,7 @@ facemirror/
 │   ├── login / submitPractice / asr / analyze / finalize
 │   ├── genQuestions / getPractice / getQuestions / getHistory / updateTranscript
 │   └── parseResume / analyzeJob / genDeepQuestions / deepSession / deepAnalyze  # 深度面试
-├── data/questions/          # 80 题题库 JSON
+├── data/questions/          # 1382 题题库（原 80 + 13 学科 ×100+）
 ├── docs/                    # 作品说明文档（7 项）/ prompt-log / 小程序AI技能接入指南
 ├── scripts/                 # deploy_cloud.py / verify_cloud_deploy.py
 │                            # count_assertions.js / static_check.js
@@ -93,11 +93,12 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
    | `questions` | 所有用户可读 | 抽题返回空，首页点不动 |
    | `interviews` | 仅创建者可读写 | 深度面试会话无处存放，进答题页报「面试记录不存在」 |
 
-3. `questions` 集合导入 **`data/questions/questions.import.json`**（JSON Lines，80 行）。
+3. `questions` 集合导入 **`data/questions/questions.import.json`**（JSON Lines，1382 行）。
+   > ⚠️ 集合内已有旧数据（80 条）时先全选删除再导入，否则会叠加重复记录。
    不要导入 `questions.json`——那是 JSON 数组，云开发导入只认每行一条，会导入 0 条。
    详见 `data/questions/README.md`。
 
-**验收**：5 个集合存在，`questions` 记录数 = 80，`practices` 与 `interviews` 权限不是「所有用户可读写」。
+**验收**：5 个集合存在，`questions` 记录数 = 1382，`practices` 与 `interviews` 权限不是「所有用户可读写」。
 
 ### 3. 部署云函数
 
