@@ -229,6 +229,8 @@ Page({
         // 用户主动取消不算错误，不打扰
         const msg = err?.errMsg || "";
         if (msg.includes("cancel")) return;
+        // 诊断：同 resume 页，fail 时必须留下真实 errMsg（2026-10-27 真机调试选文件失败查无实据）
+        console.error("[question] chooseMessageFile fail:", msg || JSON.stringify(err));
         wx.showToast({ title: "选择文件失败，请重试", icon: "none" });
       },
     });

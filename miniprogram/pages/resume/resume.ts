@@ -254,6 +254,10 @@ Page({
       fail: (err: any) => {
         const msg = err && err.errMsg ? err.errMsg : "";
         if (msg.includes("cancel")) return; // 用户主动取消不算错误
+        // 诊断：fail 分支必须把真实 errMsg 打进 Console，否则只剩一个
+        // 「选择文件失败」toast，无法区分真机调试限制 / 手势校验 / 其他原因
+        //（2026-10-27 真机调试模式选文件失败，Console 却查无实据）
+        console.error("[resume] chooseMessageFile fail:", msg || JSON.stringify(err));
         wx.showToast({ title: "选择文件失败，请重试", icon: "none" });
       },
     });
