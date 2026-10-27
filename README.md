@@ -57,7 +57,7 @@ facemirror/
 
 ### 1.5 本地类型检查（可选）
 
-仓库已提交 `package-lock.json`（根目录 + 15 个云函数各一份），
+仓库已提交 `package-lock.json`（根目录 + 17 个云函数各一份），
 用 `npm ci` 可**严格按锁文件**安装，保证与作者环境一致：
 
 ```bash
@@ -151,7 +151,7 @@ python scripts/verify_cloud_deploy.py    # ★部署验证：download 云端代�
 > `-604101` = 无权限调用此 API，需给云函数配置云调用权限 · `-604102` = 调用超时。
 >
 > ⚠️ **别再把 `-504002` 当成"云函数未部署"**。2026-10-26 用开发者工具 CLI 实测：
-> 本项目 **15 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` timeout 60 /
+> 本项目 **17 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` / `quizScore` timeout 60 /
 > runtime Nodejs16.13，依赖 `wx-server-sdk ~2.6.3` 完整）。
 > 所以 `-504002` 一律按「**云函数内部抛了异常**」处理 —— 去 `message:` 字段和云函数日志里找真因。
 >
@@ -222,6 +222,24 @@ python scripts/verify_cloud_deploy.py    # ★部署验证：download 云端代�
 
 **核心原则**：0 Key 也能跑通主链路（录音 → 人工输入转写 → 规则化评估 → 报告），
 接入 Key 后升级为真·语音识别 + 大模型点评。
+
+---
+
+## 📚 题库抽题（批量模式，2026-10-27 新增）
+
+首页「出题方式」第一项，替代原「随机抽题（单题）」：
+
+**流程**：`quiz-setup`（13 学科多选 + 题量 10/12/15）→ `quiz`（整卷一次展示、逐题文本作答、顶部进度条）→ 交卷 → `quiz-result`（总分 + **科目掌握度雷达** + 分科目条形 + 逐题点评 + 针对性学习建议）。
+
+**云函数**：
+- `quizDraw`：13 学科白名单校验 → 按各科题量占比分配抽取数（每科至少 1 题）→ 科目内等概率随机抽样 → 整体打乱。题库为空/不足 10 题时返回**可操作指引**（提示重新导入 `questions.import.json`）。
+- `quizScore`：校验（≤15 题、答案 ≤2000 字、全部未作答拒绝）→ 每日配额 20 次 → 注入扫描（命中整卷规则分）→ **单次 LLM 调用**逐题评分（LLM 未配置/失败 → 确定性规则降级，功能永可用）→ **科目聚合由服务端从每题得分确定性计算**（不采信 LLM 自报科目分）→ 写入 `practices`（`kind:"quiz"`，写库失败不阻塞返回报告）。
+
+**状态管理**：`quiz` 页状态机 `loading → ready → submitting → (成功 redirectTo 结果页 | 失败回 ready 可重试)`；看门狗 25s 强制归位；防重入用 nav-guard 时间戳锁 + `submitting` 早退，按钮永不禁用；`onUnload` + `alive` 守卫异步 setData。
+
+**零新集合**：复用 `practices`（历史记录可见，标签「题库抽题」）与 `quota`；历史记录点开 quiz 记录会经 `result` 页自动分流到 `quiz-result`。
+
+**⚠️ 部署注意**：`quizScore` 含 LLM 调用，需在云开发控制台把其超时改为 **60s**（与 `analyze` 相同，`config.json` 设不了）。
 
 ---
 
@@ -471,7 +489,7 @@ this._guard.dispose();
 | `tests/record_state_machine.test.js` | 录音页 8 态状态机（每个状态的出口 + 失败路径自愈） | 13 场景 / 48 断言 |
 | `tests/deep_flow.test.js` | 深度面试全链路（出题补齐 / 会话状态机 / 越权 / 三页状态机 / 草稿保护 / 集合缺失可操作报错） | 17 场景 / 132 断言 |
 
-> 全量口径：`npm test` → **12 个测试文件 / 431 条断言 / 85 个场景**，失败 0；
+> 全量口径：`npm test` → **13 个测试文件 / 503 条断言 / 96 个场景**，失败 0；
 > 数字可用 `node scripts/count_assertions.js` 一键复现（脚本直接读 `package.json` 的
 > test 列表，不会与实际测试文件漂移）。
 >

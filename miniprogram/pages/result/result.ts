@@ -100,6 +100,22 @@ Page({
       }
       const p = await getPractice(this.data.recordId);
       if (!this.alive) return; // 页面已卸载，避免向已销毁页面 setData
+      // 分流（2026-10-27）：题库抽题（批量模式）的成绩挂在 practices（kind:"quiz"），
+      // 报告结构与单题语音练习完全不同，本页的雷达/维度/逐句批注渲染不适用。
+      // 历史记录点开 quiz 记录会先到这里，改道到专用结果页。
+      if (p.report && (p.report as any).kind === "quiz") {
+        wx.redirectTo({
+          url: `/pages/quiz-result/quiz-result?recordId=${this.data.recordId}`,
+          fail: () => {
+            this.setData({
+              loading: false,
+              loadFailed: true,
+              errorMsg: "题库抽题成绩需在专用结果页查看，跳转失败请重试",
+            });
+          },
+        });
+        return;
+      }
       // 报告可能尚未生成（status 仍为 pending/asr_done），
       // 此时 report 为 null，属正常中间态而非错误
       this.setData({

@@ -12,6 +12,7 @@ import type {
   JobProfile,
   ResumeProfile,
 } from "./interview";
+import type { QuizQuestion, QuizReport } from "./quiz";
 
 // ---- 类型（与云函数返回结构对应） ----
 
@@ -510,4 +511,24 @@ export function submitDeepAnswer(payload: {
 /** 生成深度面试总结（雷达 + 优势短板 + 优化建议） */
 export function deepAnalyze(interviewId: string): Promise<{ report: DeepReport }> {
   return call("deepAnalyze", { interviewId });
+}
+
+// ---- 题库抽题（批量模式）接口 ----
+
+/** 按所选科目（多选）随机抽 10~15 题，一次性返回 */
+export function quizDraw(payload: { categories: string[]; count?: number }): Promise<{
+  questions: QuizQuestion[];
+  totalAvailable: number;
+  categories: string[];
+  count: number;
+}> {
+  return call("quizDraw", payload);
+}
+
+/** 全部答案提交 → 统一评分（每题得分 + 科目掌握度 + 学习建议） */
+export function quizScore(payload: {
+  questions: { text: string; category: string; difficulty: string }[];
+  answers: string[];
+}): Promise<{ report: QuizReport; recordId: string }> {
+  return call("quizScore", payload);
 }

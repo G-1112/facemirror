@@ -1,0 +1,97 @@
+.container {
+  padding: 30rpx 30rpx 60rpx;
+}
+
+.header {
+  padding: 20rpx 0 10rpx;
+}
+
+.title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.sub {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.section-title {
+  margin: 36rpx 0 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #374151;
+}
+
+.subject-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.subject-chip {
+  display: flex;
+  align-items: center;
+  padding: 14rpx 22rpx;
+  background: #ffffff;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 12rpx;
+}
+
+.chip-icon {
+  margin-right: 8rpx;
+  font-size: 28rpx;
+}
+
+.chip-name {
+  font-size: 28rpx;
+  color: #374151;
+}
+
+.subject-chip.checked {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.subject-chip.checked .chip-name {
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.chip-hover {
+  opacity: 0.8;
+}
+
+.count-row {
+  display: flex;
+  gap: 20rpx;
+}
+
+.count-chip {
+  padding: 14rpx 36rpx;
+  background: #ffffff;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  color: #374151;
+}
+
+.count-chip.checked {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.start-btn {
+  margin-top: 60rpx;
+  width: 100%;
+}
+
+/* 跳转中的视觉反馈（不阻断点击，防重入由 JS 锁负责） */
+.start-btn.is-busy {
+  opacity: 0.6;
+}

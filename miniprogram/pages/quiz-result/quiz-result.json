@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "题库抽题 · 评分结果",
+  "usingComponents": {
+    "radar-chart": "/components/radar-chart/radar-chart"
+  }
+}

@@ -1,0 +1,77 @@
+<view class="page">
+  <view class="loading" wx:if="{{loading}}">
+    <text class="loading-txt">正在加载评分结果…</text>
+  </view>
+
+  <view class="err-box" wx:elif="{{loadFailed}}">
+    <view class="err-txt">{{errorMsg}}</view>
+    <button class="btn-primary retry-btn" bindtap="onRetry" hover-class="btn-hover">重新加载</button>
+    <button class="btn-ghost home-btn" bindtap="onBackHome" hover-class="btn-hover">回到首页</button>
+  </view>
+
+  <block wx:else>
+    <!-- 总分 -->
+    <view class="card">
+      <view class="score-row">
+        <view class="score-num">{{view.totalScore}}</view>
+        <view class="score-meta">
+          <view class="score-label">综合得分 / 100 · {{view.scoreLevel}}</view>
+          <view class="score-sub">已答 {{view.stats.answered}} / {{view.stats.total}} 题 · {{view.model}}</view>
+        </view>
+      </view>
+      <view class="persist-warn" wx:if="{{!view.persisted}}">{{view.persistError || "成绩写入历史记录失败，本次结果仅当前可见"}}</view>
+      <view class="inject-warn" wx:if="{{view.injected}}">检测到作答中包含指令类内容，本次评分已按规则口径计算</view>
+    </view>
+
+    <!-- 科目能力图谱（雷达） -->
+    <view class="card">
+      <view class="card-title">科目掌握度图谱</view>
+      <radar-chart radar="{{view.radar}}" labels="{{view.labels}}" />
+      <view class="radar-note">各科目按题数加权均分（1~5 分），弱科排在雷达图前部</view>
+    </view>
+
+    <!-- 分科目条形 -->
+    <view class="card">
+      <view class="card-title">分科目得分</view>
+      <view class="dim" wx:for="{{view.subjectList}}" wx:key="category">
+        <view class="dim-line">
+          <text class="dim-name">{{item.category}}（{{item.count}} 题）</text>
+          <text class="dim-score">{{item.avgScoreText}}/5</text>
+        </view>
+        <view class="dim-bar"><view class="dim-fill" style="width: {{item.percent}}%"></view></view>
+        <view class="dim-summary" wx:if="{{item.summary}}">{{item.summary}}</view>
+      </view>
+    </view>
+
+    <!-- 综合评价 -->
+    <view class="card" wx:if="{{view.overall}}">
+      <view class="card-title">综合评价</view>
+      <view class="para">{{view.overall}}</view>
+    </view>
+
+    <!-- 学习建议 -->
+    <view class="card">
+      <view class="card-title">针对性学习建议</view>
+      <view class="sug" wx:for="{{view.suggestions}}" wx:key="*this">
+        <text class="sug-dot">•</text>
+        <text class="sug-txt">{{item}}</text>
+      </view>
+    </view>
+
+    <!-- 逐题点评 -->
+    <view class="card">
+      <view class="card-title">逐题点评</view>
+      <view class="pq" wx:for="{{view.perQuestion}}" wx:key="no">
+        <view class="pq-head">
+          <text class="pq-no">第 {{item.no}} 题 · {{item.category}}</text>
+          <text class="pq-score s-{{item.score}}">{{item.score}}/5</text>
+        </view>
+        <view class="pq-question">{{item.question}}</view>
+        <view class="pq-comment" wx:if="{{item.comment}}">{{item.comment}}</view>
+        <view class="pq-unanswered" wx:if="{{!item.answered}}">（未作答）</view>
+      </view>
+    </view>
+
+    <button class="btn-primary again-btn" bindtap="onBackHome" hover-class="btn-hover">再练一轮</button>
+  </block>
+</view>

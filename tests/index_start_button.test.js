@@ -175,13 +175,28 @@ async function main() {
     const { inst, calls } = loadIndex({ mode: "success" });
     inst.onStart();
     check("发起了 navigateTo", calls.length === 1, String(calls.length));
+    // 2026-10-27 语义变更：默认出题方式改为「题库抽题」（批量），
+    // 默认点击应跳 quiz-setup 设置页（仍带 scene），不再进单题 question 页。
     check(
-      "跳转 URL 带上 scene 与 mode",
-      calls[0] && calls[0].url.includes("scene=interview") && calls[0].url.includes("mode=random"),
+      "默认模式跳题库抽题设置页并带 scene",
+      calls[0] && calls[0].url.includes("/pages/quiz-setup/quiz-setup?scene=interview"),
       calls[0] && calls[0].url
     );
     await sleep(10);
     check("跳转成功后 navigating 已复位", inst.data.navigating === false, String(inst.data.navigating));
+  }
+
+  // ── 场景 2b：自定义出题模式仍跳单题 question 页（2026-10-27 回归补）──
+  console.log("\n场景 2b：自定义出题模式");
+  {
+    const { inst, calls } = loadIndex({ mode: "success" });
+    inst.setData({ mode: "custom" });
+    inst.onStart();
+    check("custom 模式跳 question 页并带 scene 与 mode",
+      calls[0] && calls[0].url.includes("/pages/question/question") &&
+      calls[0].url.includes("scene=interview") && calls[0].url.includes("mode=custom"),
+      calls[0] && calls[0].url
+    );
   }
 
   // ── 场景 3：★navigateTo 静默失败（success/fail 都不回调）────────────

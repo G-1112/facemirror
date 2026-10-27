@@ -52,6 +52,9 @@ ORDER = [
     "genDeepQuestions",  # 出题（15~20 道）
     "deepSession",     # 会话状态中枢（跨页续答）
     "deepAnalyze",     # 总结雷达
+    # ---- 题库抽题（批量模式）----
+    "quizDraw",        # 按科目多选抽 10~15 题
+    "quizScore",       # 全部答案统一评分（LLM 失败降级规则分）
 ]
 
 DEFAULT_CLI_CANDIDATES = [

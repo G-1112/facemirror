@@ -1,0 +1,149 @@
+.page {
+  padding-bottom: 200rpx;
+}
+
+.loading {
+  padding: 120rpx 40rpx;
+  text-align: center;
+}
+
+.loading-txt {
+  font-size: 28rpx;
+  color: #6b7280;
+}
+
+.err-box {
+  margin: 60rpx 30rpx;
+  padding: 40rpx;
+  background: #fef2f2;
+  border-radius: 16rpx;
+}
+
+.err-txt {
+  font-size: 28rpx;
+  color: #b91c1c;
+  line-height: 1.6;
+  margin-bottom: 30rpx;
+}
+
+.retry-btn {
+  width: 60%;
+}
+
+/* 顶部进度 */
+.progress-bar {
+  height: 10rpx;
+  background: #e5e7eb;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 999rpx;
+  transition: width 0.2s ease;
+}
+
+.progress-txt {
+  padding: 16rpx 4rpx 4rpx;
+  font-size: 24rpx;
+  color: #6b7280;
+}
+
+/* 题目卡片 */
+.q-card {
+  margin-top: 24rpx;
+  padding: 28rpx;
+  background: #ffffff;
+  border-radius: 20rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+
+.q-head {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.q-no {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #2563eb;
+}
+
+.q-tag {
+  padding: 4rpx 14rpx;
+  background: #eff6ff;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  color: #2563eb;
+}
+
+.q-diff {
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+}
+
+.q-diff-简单 {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.q-diff-中等 {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.q-diff-困难 {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.q-text {
+  margin-top: 18rpx;
+  font-size: 30rpx;
+  color: #1f2937;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.a-input {
+  margin-top: 20rpx;
+  width: 100%;
+  min-height: 140rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  background: #f9fafb;
+  border: 2rpx solid #e5e7eb;
+  border-radius: 12rpx;
+  font-size: 28rpx;
+  line-height: 1.5;
+  color: #1f2937;
+}
+
+.a-placeholder {
+  color: #9ca3af;
+}
+
+/* 交卷 */
+.submit-wrap {
+  margin-top: 40rpx;
+  padding: 0 30rpx;
+}
+
+.submit-btn {
+  width: 100%;
+}
+
+.submit-btn.is-busy {
+  opacity: 0.6;
+}
+
+.submit-tip {
+  margin-top: 16rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: #6b7280;
+}

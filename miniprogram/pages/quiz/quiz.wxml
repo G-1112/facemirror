@@ -1,0 +1,48 @@
+<view class="page">
+  <!-- 加载态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text class="loading-txt">正在从题库抽题（{{catsLabel}}）…</text>
+  </view>
+
+  <!-- 失败态：可重试 -->
+  <view class="err-box" wx:elif="{{loadFailed}}">
+    <view class="err-txt">{{errorMsg}}</view>
+    <button class="btn-primary retry-btn" bindtap="onRetry" hover-class="btn-hover">重新抽题</button>
+  </view>
+
+  <block wx:else>
+    <!-- 顶部进度条（吸附） -->
+    <view class="progress-bar">
+      <view class="progress-fill" style="width: {{items.length ? (answeredCount / items.length) * 100 : 0}}%"></view>
+    </view>
+    <view class="progress-txt">已答 {{answeredCount}} / {{items.length}} 题 · {{catsLabel}}</view>
+
+    <!-- 题目列表（一次性展示，逐题作答） -->
+    <view class="q-card" wx:for="{{items}}" wx:key="index">
+      <view class="q-head">
+        <text class="q-no">第 {{item.index + 1}} 题</text>
+        <text class="q-tag">{{item.category}}</text>
+        <text class="q-diff q-diff-{{item.difficulty}}">{{item.difficulty}}</text>
+      </view>
+      <view class="q-text">{{item.text}}</view>
+      <textarea
+        class="a-input"
+        value="{{answers[item.index]}}"
+        data-index="{{item.index}}"
+        bindinput="onAnswerInput"
+        placeholder="在此作答（建议 100 字以上：定义 → 展开 → 举例）"
+        placeholder-class="a-placeholder"
+        maxlength="{{maxLen}}"
+        auto-height
+      ></textarea>
+    </view>
+
+    <!-- 交卷按钮：永不禁用，未答完/评分中由 JS 拦截并提示 -->
+    <view class="submit-wrap">
+      <button class="btn-primary submit-btn {{submitting ? 'is-busy' : ''}}" bindtap="onSubmitAll">
+        {{submitting ? '评分中，请稍候…' : '交卷并查看评分'}}
+      </button>
+      <view class="submit-tip" wx:if="{{submitting}}">AI 正在逐题评分并生成科目掌握度，约需 10~30 秒</view>
+    </view>
+  </block>
+</view>

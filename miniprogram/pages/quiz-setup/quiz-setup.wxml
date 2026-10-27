@@ -1,0 +1,42 @@
+<view class="container">
+  <view class="header">
+    <view class="title">题库抽题</view>
+    <view class="sub">选择一个或多个科目，系统随机抽取 {{count}} 题，依次作答后统一评分</view>
+  </view>
+
+  <!-- 科目多选 -->
+  <view class="section-title">选择科目（可多选）</view>
+  <view class="subject-grid">
+    <view
+      wx:for="{{subjects}}"
+      wx:key="key"
+      class="subject-chip {{item.checked ? 'checked' : ''}}"
+      data-key="{{item.key}}"
+      bindtap="onToggleSubject"
+      hover-class="chip-hover"
+    >
+      <text class="chip-icon">{{item.icon}}</text>
+      <text class="chip-name">{{item.name}}</text>
+    </view>
+  </view>
+
+  <!-- 题量档位 -->
+  <view class="section-title">抽题数量</view>
+  <view class="count-row">
+    <view
+      wx:for="{{countOptions}}"
+      wx:key="*this"
+      class="count-chip {{count === item ? 'checked' : ''}}"
+      data-count="{{item}}"
+      bindtap="onPickCount"
+    >{{item}} 题</view>
+  </view>
+
+  <!--
+    ⚠️ 刻意不用 disabled 做防重入（首页事故同款）：
+    未选科目时点「开始抽题」→ JS 拦截 + toast 指引，按钮永远可点。
+  -->
+  <button class="btn-primary start-btn {{navigating ? 'is-busy' : ''}}" bindtap="onStart">
+    {{navigating ? '跳转中…' : '开始抽题'}}
+  </button>
+</view>

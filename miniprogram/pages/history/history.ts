@@ -60,7 +60,10 @@ Page({
       const arr = Array.isArray(list) ? list : [];
       const mapped = arr.map((it) => ({
         ...it,
-        sceneLabel: SCENE_LABEL[it.scene] || it.scene,
+        sceneLabel:
+          it.report && (it.report as any).kind === "quiz"
+            ? "题库抽题"
+            : SCENE_LABEL[it.scene] || it.scene,
         dateLabel: this.formatDate(it.createdAt),
         score: it.report ? it.report.totalScore : 0,
       }));

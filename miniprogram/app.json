@@ -5,6 +5,9 @@
     "pages/record/record",
     "pages/result/result",
     "pages/history/history",
+    "pages/quiz-setup/quiz-setup",
+    "pages/quiz/quiz",
+    "pages/quiz-result/quiz-result",
     "pages/resume/resume",
     "pages/deep/deep",
     "pages/deep-report/deep-report"

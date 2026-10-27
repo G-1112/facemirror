@@ -1,7 +1,6 @@
 <view class="container">
   <view class="hero">
     <view class="hero-title">面镜</view>
-    <view class="hero-sub">对着手机说 3 分钟，60 秒内拿到能力雷达图</view>
   </view>
 
   <!-- 场景选择 -->
@@ -24,12 +23,12 @@
   <view class="section-title">出题方式</view>
   <view class="mode-list">
     <view
-      class="mode-card {{mode === 'random' ? 'active' : ''}}"
-      data-mode="random"
+      class="mode-card {{mode === 'quiz' ? 'active' : ''}}"
+      data-mode="quiz"
       bindtap="onModeTap"
     >
-      <view class="mode-title">随机抽题</view>
-      <view class="mode-desc">从内置题库抽取一道题</view>
+      <view class="mode-title">题库抽题</view>
+      <view class="mode-desc">自选科目（可多选），抽 10~15 题批量作答并统一评分</view>
     </view>
     <view
       class="mode-card {{mode === 'custom' ? 'active' : ''}}"

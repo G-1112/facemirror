@@ -6,7 +6,7 @@ Page({
   data: {
     scenes: SCENES,
     scene: "interview",
-    mode: "random", // random | custom
+    mode: "quiz", // quiz（题库抽题·批量）| custom（自定义出题）
     // 防重入窗口状态：⚠️ 仅用于**视觉反馈**（按钮显示"跳转中…"），
     // **绝不作为可点性闸门**。真正的闸门是 nav-guard 的时间戳锁。
     // 详见 utils/nav-guard.ts 顶部的「三条铁律」。
@@ -54,8 +54,13 @@ Page({
     // 防重入：窗口内忽略连点（时间戳锁会自动过期，永不永久卡死）
     if (!this._guard || !this._guard.tryLock()) return;
     const { scene, mode } = this.data;
+    // 题库抽题（批量模式）：先到设置页选科目，不进单题流程
+    const url =
+      mode === "quiz"
+        ? `/pages/quiz-setup/quiz-setup?scene=${scene}`
+        : `/pages/question/question?scene=${scene}&mode=${mode}`;
     wx.navigateTo({
-      url: `/pages/question/question?scene=${scene}&mode=${mode}`,
+      url,
       success: () => {
         // 到达目标页后允许再次进入（本页仍在栈底）
         if (this._guard) this._guard.unlock();
