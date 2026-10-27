@@ -1,0 +1,110 @@
+<view class="page">
+  <view class="loading" wx:if="{{loading}}">
+    <text class="loading-txt">正在加载面试总结…</text>
+  </view>
+
+  <view class="err-box" wx:elif="{{loadFailed}}">
+    <view class="err-txt">{{errorMsg}}</view>
+    <button class="btn btn-primary" bindtap="onRetry" hover-class="btn-hover">重新生成总结</button>
+  </view>
+
+  <block wx:else>
+    <!-- 总分 + 雷达 -->
+    <view class="card">
+      <view class="score-row">
+        <view class="score-num">{{reportView.totalScore}}</view>
+        <view class="score-meta">
+          <view class="score-label">综合得分 / 100</view>
+          <view class="score-sub">已答 {{reportView.stats.answered}} / {{reportView.stats.total}} 题 · 总用时 {{reportView.stats.totalDurationText}} · 平均每题 {{reportView.stats.avgDurationText}}</view>
+        </view>
+      </view>
+      <radar-chart radar="{{reportView.radar}}" labels="{{reportView.labels}}" />
+    </view>
+
+    <!-- 分项能力得分 -->
+    <view class="card">
+      <view class="card-title">分项能力得分</view>
+      <view class="dim" wx:for="{{reportView.dimList}}" wx:key="key">
+        <text class="dim-name">{{item.name}}</text>
+        <view class="dim-bar"><view class="dim-fill" style="width: {{item.percent}}%"></view></view>
+        <text class="dim-score">{{item.score}}/5</text>
+      </view>
+    </view>
+
+    <!-- 综合评价 -->
+    <view class="card" wx:if="{{reportView.overall}}">
+      <view class="card-title">综合评价</view>
+      <view class="para">{{reportView.overall}}</view>
+    </view>
+
+    <!-- 优势 -->
+    <view class="card" wx:if="{{reportView.strengths.length > 0}}">
+      <view class="card-title">表现较好的能力</view>
+      <view class="sw" wx:for="{{reportView.strengths}}" wx:key="dimension">
+        <view class="sw-head"><text class="sw-dim">{{item.dimension}}</text></view>
+        <view class="sw-text">{{item.text}}</view>
+        <view class="sw-evi" wx:if="{{item.evidence}}">{{item.evidence}}</view>
+      </view>
+    </view>
+
+    <!-- 短板 -->
+    <view class="card" wx:if="{{reportView.weaknesses.length > 0}}">
+      <view class="card-title">明显短板</view>
+      <view class="sw sw-weak" wx:for="{{reportView.weaknesses}}" wx:key="dimension">
+        <view class="sw-head"><text class="sw-dim">{{item.dimension}}</text></view>
+        <view class="sw-text">{{item.text}}</view>
+        <view class="sw-evi" wx:if="{{item.evidence}}">{{item.evidence}}</view>
+      </view>
+    </view>
+
+    <!-- 优化建议 -->
+    <view class="card">
+      <view class="card-title">提升建议</view>
+
+      <view class="sec" wx:if="{{reportView.knowledgeGaps.length > 0}}">
+        <view class="sec-title">需补强的知识 / 技能</view>
+        <view class="gap" wx:for="{{reportView.knowledgeGaps}}" wx:key="topic">
+          <view class="gap-topic">{{item.topic}}</view>
+          <view class="gap-line" wx:if="{{item.reason}}">原因：{{item.reason}}</view>
+          <view class="gap-line gap-res" wx:if="{{item.resource}}">建议：{{item.resource}}</view>
+        </view>
+      </view>
+
+      <view class="sec" wx:if="{{reportView.resumeTips.length > 0}}">
+        <view class="sec-title">简历优化点</view>
+        <view class="li" wx:for="{{reportView.resumeTips}}" wx:key="*this">
+          <text class="li-dot">·</text><text class="li-txt">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="sec" wx:if="{{reportView.expressionTips.length > 0}}">
+        <view class="sec-title">面试表达改进方向</view>
+        <view class="li" wx:for="{{reportView.expressionTips}}" wx:key="*this">
+          <text class="li-dot">·</text><text class="li-txt">{{item}}</text>
+        </view>
+      </view>
+
+      <view class="sec" wx:if="{{reportView.practiceSuggestions.length > 0}}">
+        <view class="sec-title">推荐练习方向</view>
+        <view class="li" wx:for="{{reportView.practiceSuggestions}}" wx:key="*this">
+          <text class="li-dot">·</text><text class="li-txt">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 逐题点评 -->
+    <view class="card" wx:if="{{reportView.perQuestion.length > 0}}">
+      <view class="card-title">逐题点评</view>
+      <view class="pq" wx:for="{{reportView.perQuestion}}" wx:key="questionId">
+        <view class="pq-head">
+          <text class="pq-no">第 {{index + 1}} 题</text>
+          <text class="pq-score">{{item.score}}/5</text>
+        </view>
+        <view class="pq-q">{{item.question}}</view>
+        <view class="pq-fb">{{item.feedback}}</view>
+        <view class="pq-line" wx:if="{{item.hit}}">✓ {{item.hit}}</view>
+        <view class="pq-line pq-miss" wx:if="{{item.missed}}">✗ {{item.missed}}</view>
+      </view>
+    </view>
+  </block>
+</view>

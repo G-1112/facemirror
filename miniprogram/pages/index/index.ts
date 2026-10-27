@@ -82,4 +82,22 @@ Page({
       },
     });
   },
+
+  /**
+   * 进入深度面试（简历驱动）链路。
+   * 与「开始练习」一样走 nav-guard 时间戳锁：防重入靠 JS 侧，不靠 disabled。
+   */
+  onDeep() {
+    if (!this._guard || !this._guard.tryLock()) return;
+    wx.navigateTo({
+      url: "/pages/resume/resume",
+      success: () => {
+        if (this._guard) this._guard.unlock();
+      },
+      fail: () => {
+        if (this._guard) this._guard.unlock();
+        wx.showToast({ title: "页面打开失败，请重试", icon: "none" });
+      },
+    });
+  },
 });

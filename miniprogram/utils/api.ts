@@ -4,6 +4,14 @@
  */
 
 import { SUBSCRIBE_TEMPLATE_ID } from "./config";
+import type {
+  AnswerRecord,
+  CompetencyModel,
+  DeepReport,
+  InterviewQuestion,
+  JobProfile,
+  ResumeProfile,
+} from "./interview";
 
 // ---- 类型（与云函数返回结构对应） ----
 
@@ -410,4 +418,86 @@ export function requestSubscribe(): Promise<boolean> {
       fail: () => resolve(false),
     });
   });
+}
+
+// ---- 深度面试（简历驱动）接口 ----
+
+/** 解析简历文件 → 结构化简历 */
+export function parseResume(payload: { fileID: string }): Promise<{
+  resume: ResumeProfile;
+  rawText: string;
+}> {
+  return call("parseResume", payload);
+}
+
+/** 目标岗位 → 能力评估标准 */
+export function analyzeJob(payload: { job: JobProfile }): Promise<{ competency: CompetencyModel }> {
+  return call("analyzeJob", payload);
+}
+
+/** 简历 + 岗位 + 能力标准 → 15~20 道强关联面试题 */
+export function genDeepQuestions(payload: {
+  resume: ResumeProfile;
+  job: JobProfile;
+  competency: CompetencyModel;
+}): Promise<{
+  questions: InterviewQuestion[];
+  coverage: { byType: Record<string, number>; byCompetency: Record<string, number>; byDifficulty: Record<string, number> };
+  source: string;
+  countWarning: string;
+}> {
+  return call("genDeepQuestions", payload);
+}
+
+/** 创建深度面试会话（返回 interviewId） */
+export function createDeepSession(): Promise<{ interviewId: string }> {
+  return call("deepSession", { action: "create" });
+}
+
+/** 保存会话（简历解析结果 / 岗位 / 能力标准 / 题目） */
+export function updateDeepSession(payload: {
+  interviewId: string;
+  resume?: ResumeProfile;
+  job?: JobProfile;
+  competency?: CompetencyModel;
+  questions?: InterviewQuestion[];
+}): Promise<{ ok: boolean }> {
+  return call("deepSession", { action: "update", ...payload });
+}
+
+/** 读取会话（续答用） */
+export function getDeepSession(interviewId: string): Promise<{
+  interviewId: string;
+  status: string;
+  resume: ResumeProfile | null;
+  job: JobProfile | null;
+  competency: CompetencyModel | null;
+  questions: InterviewQuestion[];
+  answers: AnswerRecord[];
+  currentIndex: number;
+  report: DeepReport | null;
+}> {
+  return call("deepSession", { action: "get", interviewId });
+}
+
+/** 提交单题答案（服务端同步完成单题评分） */
+export function submitDeepAnswer(payload: {
+  interviewId: string;
+  questionId: string;
+  answer: string;
+  durationSec: number;
+}): Promise<{
+  ok: boolean;
+  record: AnswerRecord;
+  currentIndex: number;
+  answeredCount: number;
+  totalCount: number;
+  finished: boolean;
+}> {
+  return call("deepSession", { action: "answer", ...payload });
+}
+
+/** 生成深度面试总结（雷达 + 优势短板 + 优化建议） */
+export function deepAnalyze(interviewId: string): Promise<{ report: DeepReport }> {
+  return call("deepAnalyze", { interviewId });
 }

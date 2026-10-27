@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "面试总结",
+  "usingComponents": {
+    "radar-chart": "/components/radar-chart/radar-chart"
+  }
+}

@@ -1,0 +1,169 @@
+<view class="page">
+  <view class="hero">
+    <view class="hero-title">深度面试</view>
+    <view class="hero-sub">上传简历 → 岗位分析 → 15~20 道针对性题目 → 逐题作答 → 能力总结</view>
+  </view>
+
+  <!-- ============ 步骤条 ============ -->
+  <view class="steps">
+    <view class="step {{step === 'upload' ? 'on' : (step === 'review' || step === 'job' || step === 'ready' ? 'done' : '')}}"><text class="dot">1</text><text class="txt">上传简历</text></view>
+    <view class="step-line"></view>
+    <view class="step {{step === 'review' ? 'on' : (step === 'job' || step === 'ready' ? 'done' : '')}}"><text class="dot">2</text><text class="txt">核对解析</text></view>
+    <view class="step-line"></view>
+    <view class="step {{step === 'job' ? 'on' : (step === 'ready' ? 'done' : '')}}"><text class="dot">3</text><text class="txt">岗位分析</text></view>
+    <view class="step-line"></view>
+    <view class="step {{step === 'ready' ? 'on' : ''}}"><text class="dot">4</text><text class="txt">开始面试</text></view>
+  </view>
+
+  <!-- ============ 错误提示（始终可见，不吞原因） ============ -->
+  <view class="err" wx:if="{{errorMsg}}">
+    <text class="err-icon">!</text>
+    <text class="err-txt">{{errorMsg}}</text>
+  </view>
+
+  <!-- ============ 步骤 1：上传 ============ -->
+  <block wx:if="{{step === 'upload'}}">
+    <view class="card">
+      <view class="card-title">上传你的简历</view>
+      <view class="card-desc">支持 {{'txt / md / docx'}} 格式。建议包含：教育背景、工作或实习经历、项目经历、比赛获奖、技能栈。</view>
+      <button class="btn btn-primary" bindtap="onPickResume" hover-class="btn-hover">
+        {{uploading ? '上传中…' : (parsing ? '解析中…' : '选择简历文件')}}
+      </button>
+      <view class="hint">简历仅用于本次面试出题与分析，解析结果你可以逐项修正。</view>
+    </view>
+  </block>
+
+  <!-- ============ 步骤 2：核对解析结果 ============ -->
+  <block wx:elif="{{step === 'review'}}">
+    <view class="card" wx:if="{{resumeWarnings.length > 0}}">
+      <view class="card-title">解析提示</view>
+      <view class="warn-item" wx:for="{{resumeWarnings}}" wx:key="*this">
+        <text class="warn-dot">·</text><text class="warn-txt">{{item}}</text>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-title">
+        解析结果
+        <text class="tag" wx:if="{{parseMode === 'rule'}}">规则识别</text>
+        <text class="tag tag-ok" wx:else>AI 识别</text>
+      </view>
+      <view class="card-desc">请核对以下内容，可直接修改「个人概述」与「技能」；其余条目在生成题目时会作为出题依据。</view>
+    </view>
+
+    <view class="card">
+      <view class="label">个人概述</view>
+      <textarea class="ta" value="{{editSummary}}" placeholder="一句话介绍你自己" bindinput="onEditSummary" maxlength="300" auto-height></textarea>
+    </view>
+
+    <view class="card">
+      <view class="label">技能栈</view>
+      <textarea class="ta" value="{{editSkills}}" placeholder="用顿号或斜杠分隔，如：Python、FastAPI、MySQL" bindinput="onEditSkills" maxlength="500" auto-height></textarea>
+    </view>
+
+    <view class="card" wx:if="{{resumeView.education.length > 0}}">
+      <view class="card-title">教育背景</view>
+      <view class="item" wx:for="{{resumeView.education}}" wx:key="idx">
+        <view class="item-title">{{item.school}} <text class="item-sub">{{item.major}} {{item.degree}} {{item.period}}</text></view>
+        <view class="item-desc" wx:if="{{item.highlights}}">{{item.highlights}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{resumeView.experiences.length > 0}}">
+      <view class="card-title">工作 / 实习经历</view>
+      <view class="item" wx:for="{{resumeView.experiences}}" wx:key="idx">
+        <view class="item-title">{{item.org}} <text class="item-sub">{{item.role}} {{item.period}}</text></view>
+        <view class="item-desc" wx:if="{{item.duties}}">职责：{{item.duties}}</view>
+        <view class="item-desc" wx:if="{{item.achievements}}">成果：{{item.achievements}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{resumeView.projects.length > 0}}">
+      <view class="card-title">项目经历</view>
+      <view class="item" wx:for="{{resumeView.projects}}" wx:key="idx">
+        <view class="item-title">{{item.name}} <text class="item-sub">{{item.role}} {{item.period}}</text></view>
+        <view class="item-desc" wx:if="{{item.tech}}">技术：{{item.tech}}</view>
+        <view class="item-desc" wx:if="{{item.metrics}}">指标：{{item.metrics}}</view>
+        <view class="item-desc" wx:if="{{item.desc}}">{{item.desc}}</view>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{resumeView.awards.length > 0}}">
+      <view class="card-title">比赛获奖</view>
+      <view class="item" wx:for="{{resumeView.awards}}" wx:key="idx">
+        <view class="item-title">{{item.name}} <text class="item-sub">{{item.level}} {{item.period}} {{item.issuer}}</text></view>
+      </view>
+    </view>
+
+    <view class="card">
+      <button class="btn btn-primary" bindtap="onAnalyzeJob" hover-class="btn-hover">
+        {{analyzingJob ? '分析中…' : '下一步：填写目标岗位'}}
+      </button>
+      <button class="btn btn-ghost" bindtap="onReparse" hover-class="btn-hover">换一份简历</button>
+    </view>
+  </block>
+
+  <!-- ============ 步骤 3：岗位分析 ============ -->
+  <block wx:elif="{{step === 'job'}}">
+    <view class="card">
+      <view class="card-title">目标岗位</view>
+      <view class="field">
+        <view class="label">岗位名称 <text class="req">*</text></view>
+        <input class="input" value="{{jobView.role}}" data-key="role" bindinput="onJobInput" placeholder="如：后端开发工程师" maxlength="40" />
+      </view>
+      <view class="field">
+        <view class="label">职级</view>
+        <input class="input" value="{{jobView.level}}" data-key="level" bindinput="onJobInput" placeholder="如：校招 / 社招 1-3 年" maxlength="30" />
+      </view>
+      <view class="field">
+        <view class="label">行业方向</view>
+        <input class="input" value="{{jobView.industry}}" data-key="industry" bindinput="onJobInput" placeholder="如：互联网 / 金融科技 / 制造业" maxlength="30" />
+      </view>
+      <view class="field">
+        <view class="label">补充要求</view>
+        <textarea class="ta" value="{{jobView.extra}}" data-key="extra" bindinput="onJobInput" placeholder="可选：技术栈偏好、看重的能力等" maxlength="300" auto-height></textarea>
+      </view>
+    </view>
+
+    <view class="card" wx:if="{{competencyView.competencies.length > 0}}">
+      <view class="card-title">岗位能力评估标准</view>
+      <view class="comp" wx:for="{{competencyView.competencies}}" wx:key="key">
+        <view class="comp-head">
+          <text class="comp-name">{{item.name}}</text>
+          <text class="comp-weight">权重 {{item.weight}}%</text>
+        </view>
+        <view class="comp-focus" wx:if="{{item.focusPoints}}">考察点：{{item.focusPoints}}</view>
+        <view class="comp-exp" wx:if="{{item.expectedLevel}}">期望：{{item.expectedLevel}}</view>
+      </view>
+      <view class="hint" wx:if="{{competencyView.interviewerStyle}}">面试风格：{{competencyView.interviewerStyle}}</view>
+    </view>
+
+    <view class="card">
+      <button class="btn btn-primary" bindtap="onGenerateQuestions" hover-class="btn-hover">
+        {{generating ? '生成中…' : '生成 15~20 道面试题'}}
+      </button>
+      <button class="btn btn-ghost" bindtap="onBackToUpload" hover-class="btn-hover">返回上一步</button>
+    </view>
+  </block>
+
+  <!-- ============ 步骤 4：题目就绪 ============ -->
+  <block wx:elif="{{step === 'ready'}}">
+    <view class="card">
+      <view class="card-title">题目已生成 <text class="tag tag-ok">{{questionCount}} 道</text></view>
+      <view class="hint" wx:if="{{countWarning}}">{{countWarning}}</view>
+      <view class="q-preview" wx:for="{{questions}}" wx:key="id">
+        <view class="q-no">{{index + 1}}</view>
+        <view class="q-body">
+          <view class="q-text">{{item.question}}</view>
+          <view class="q-meta">{{item.difficulty}} · 考察 {{item.competency}}</view>
+          <view class="q-evi" wx:if="{{item.evidence}}">依据：{{item.evidence}}</view>
+        </view>
+      </view>
+    </view>
+    <view class="card">
+      <button class="btn btn-primary" bindtap="onStartInterview" hover-class="btn-hover">
+        {{navigating ? '打开中…' : '开始逐题作答'}}
+      </button>
+    </view>
+  </block>
+</view>

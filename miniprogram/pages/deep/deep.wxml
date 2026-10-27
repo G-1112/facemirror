@@ -1,0 +1,97 @@
+<view class="page">
+  <!-- 加载态 -->
+  <view class="loading" wx:if="{{loading}}">
+    <text class="loading-txt">正在加载面试题目…</text>
+  </view>
+
+  <!-- 错误态：必须给可操作出口，不能只显示一句错 -->
+  <view class="err-box" wx:elif="{{loadFailed}}">
+    <view class="err-txt">{{errorMsg}}</view>
+    <button class="btn btn-primary" bindtap="onRetry" hover-class="btn-hover">重新加载</button>
+    <view class="hint">若持续失败，请返回上一步重新生成题目。</view>
+  </view>
+
+  <block wx:else>
+    <!-- 进度条 -->
+    <view class="progress">
+      <view class="progress-bar">
+        <view class="progress-fill" style="width: {{answeredCount / totalCount * 100}}%"></view>
+      </view>
+      <view class="progress-txt">
+        <text>第 {{cur.no}} / {{totalCount}} 题</text>
+        <text>已答 {{answeredCount}} 题</text>
+      </view>
+    </view>
+
+    <!-- 题目卡 -->
+    <view class="card">
+      <view class="q-meta">
+        <text class="badge">{{cur.typeName}}</text>
+        <text class="badge badge-lv">{{cur.difficulty}}</text>
+        <text class="badge badge-dim">{{cur.competencyName}}</text>
+      </view>
+      <view class="q-text">{{cur.question}}</view>
+      <view class="q-evi" wx:if="{{cur.evidence}}">出题依据：{{cur.evidence}}</view>
+
+      <!-- 追问（可展开，不强制） -->
+      <view class="fold" wx:if="{{cur.followups.length > 0}}" bindtap="onToggleFollowups">
+        <text class="fold-label">{{cur.showFollowups ? '收起追问' : '查看追问 (' + cur.followups.length + ')'}}</text>
+      </view>
+      <view class="fold-body" wx:if="{{cur.showFollowups}}">
+        <view class="fu" wx:for="{{cur.followups}}" wx:key="*this">
+          <text class="fu-dot">→</text><text class="fu-txt">{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 参考答案要点（可展开） -->
+      <view class="fold" wx:if="{{cur.keyPoints.length > 0}}" bindtap="onToggleKeyPoints">
+        <text class="fold-label">{{cur.showKeyPoints ? '收起要点提示' : '查看答案要点提示 (' + cur.keyPoints.length + ')'}}</text>
+      </view>
+      <view class="fold-body" wx:if="{{cur.showKeyPoints}}">
+        <view class="fu" wx:for="{{cur.keyPoints}}" wx:key="*this">
+          <text class="fu-dot">·</text><text class="fu-txt">{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 作答区 -->
+    <view class="card">
+      <view class="ans-head">
+        <text class="ans-label">你的回答</text>
+        <text class="ans-timer {{overLimit ? 'over' : ''}}">用时 {{elapsedText}}</text>
+      </view>
+      <textarea class="ta" value="{{answer}}" bindinput="onInput" placeholder="按「结论 → 细节 → 证据」的顺序回答，尽量给出具体数字与取舍理由" maxlength="2000" auto-height></textarea>
+      <view class="ans-count">{{answer.length}} / 2000</view>
+      <view class="hint" wx:if="{{overLimit}}">已超过 {{300 / 60}} 分钟，建议收束到重点，面试中长答容易被打断。</view>
+    </view>
+
+    <!-- 上一题反馈（提交后展示） -->
+    <view class="card fb" wx:if="{{showFeedback}}">
+      <view class="fb-head">
+        <text class="fb-title">本题得分</text>
+        <text class="fb-score">{{lastScore}} / 5</text>
+      </view>
+      <view class="fb-text">{{lastFeedback}}</view>
+      <view class="fb-sec" wx:if="{{lastHit.length > 0}}">
+        <text class="fb-k">✓ 命中要点</text>
+        <text class="fb-v">{{lastHit}}</text>
+      </view>
+      <view class="fb-sec" wx:if="{{lastMissed.length > 0}}">
+        <text class="fb-k fb-miss">✗ 遗漏要点</text>
+        <text class="fb-v">{{lastMissed}}</text>
+      </view>
+    </view>
+
+    <!-- 操作区：按钮永不禁用，防重入在 JS 侧 -->
+    <view class="card">
+      <button class="btn btn-primary" bindtap="onSubmit" hover-class="btn-hover">
+        {{submitting ? '提交中…' : (completing ? '生成总结中…' : (cur.no >= totalCount ? '提交并生成总结' : '提交并下一题'))}}
+      </button>
+      <view class="nav-row">
+        <button class="btn btn-ghost btn-sm" bindtap="onPrev" hover-class="btn-hover">上一题</button>
+        <button class="btn btn-ghost btn-sm" bindtap="onNext" hover-class="btn-hover">下一题</button>
+      </view>
+      <view class="err-inline" wx:if="{{errorMsg}}">{{errorMsg}}</view>
+    </view>
+  </block>
+</view>

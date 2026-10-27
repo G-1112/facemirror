@@ -90,3 +90,34 @@
   font-size: 26rpx;
   margin-top: 24rpx;
 }
+
+/* ---- 深度面试入口 ---- */
+.deep-entry {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #eff6ff, #e0e7ff);
+  border: 2rpx solid #bfdbfe;
+  border-radius: 20rpx;
+  padding: 26rpx 28rpx;
+  margin-top: 24rpx;
+}
+.deep-left {
+  flex: 1;
+}
+.deep-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1e3a8a;
+}
+.deep-desc {
+  font-size: 22rpx;
+  color: #475569;
+  margin-top: 8rpx;
+  line-height: 1.55;
+}
+.deep-arrow {
+  font-size: 44rpx;
+  color: #2563eb;
+  margin-left: 16rpx;
+  flex-shrink: 0;
+}

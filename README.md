@@ -17,15 +17,20 @@
 facemirror/
 ├── miniprogram/             # 小程序前端
 │   ├── pages/               # index/question/record/result/history
+│   │                        # + resume/deep/deep-report（深度面试链路）
 │   ├── components/          # radar-chart / sentence-note / share-poster
 │   ├── skills/facemirror/   # 小程序 AI 技能分包（wx.modelContext，启用见 docs/小程序AI技能接入指南.md）
 │   ├── utils/               # api.ts / expression.ts / recorder.ts / config.ts
+│   │                        # + interview.ts（深度面试共享类型与常量）
 │   └── app.ts / app.json
-├── cloudfunctions/          # 云函数（Node.js，10 个）
+├── cloudfunctions/          # 云函数（Node.js，15 个）
 │   ├── login / submitPractice / asr / analyze / finalize
-│   └── genQuestions / getPractice / getQuestions / getHistory / updateTranscript
+│   ├── genQuestions / getPractice / getQuestions / getHistory / updateTranscript
+│   └── parseResume / analyzeJob / genDeepQuestions / deepSession / deepAnalyze  # 深度面试
 ├── data/questions/          # 80 题题库 JSON
 ├── docs/                    # 作品说明文档（7 项）/ prompt-log / 小程序AI技能接入指南
+├── scripts/                 # deploy_cloud.py / verify_cloud_deploy.py
+│                            # count_assertions.js / static_check.js
 └── README.md
 ```
 
@@ -52,7 +57,7 @@ facemirror/
 
 ### 1.5 本地类型检查（可选）
 
-仓库已提交 `package-lock.json`（根目录 + 11 个云函数各一份），
+仓库已提交 `package-lock.json`（根目录 + 15 个云函数各一份），
 用 `npm ci` 可**严格按锁文件**安装，保证与作者环境一致：
 
 ```bash
@@ -78,7 +83,7 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
 ### 2. 开通云开发
 
 1. 点击工具栏「云开发」，创建环境（环境 ID 须与 `miniprogram/utils/config.ts` 的 `CLOUD_ENV` 一致）；
-2. 创建 **4 个**数据库集合（代码 grep 实测，勿按旧文档建 `users`——代码里没有它）：
+2. 创建 **5 个**数据库集合（代码 grep 实测，勿按旧文档建 `users`——代码里没有它）：
 
    | 集合 | 权限 | 缺了会怎样 |
    |---|---|---|
@@ -86,12 +91,13 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
    | `quota` | 仅创建者可读写 | 配额静默失效（catch 后放行），可被刷爆计费 |
    | `rate_limits` | 仅管理端可写 | 出题限流静默失效 |
    | `questions` | 所有用户可读 | 抽题返回空，首页点不动 |
+   | `interviews` | 仅创建者可读写 | 深度面试会话无处存放，进答题页报「面试记录不存在」 |
 
 3. `questions` 集合导入 **`data/questions/questions.import.json`**（JSON Lines，80 行）。
    不要导入 `questions.json`——那是 JSON 数组，云开发导入只认每行一条，会导入 0 条。
    详见 `data/questions/README.md`。
 
-**验收**：4 个集合存在，`questions` 记录数 = 80，`practices` 权限不是「所有用户可读写」。
+**验收**：5 个集合存在，`questions` 记录数 = 80，`practices` 与 `interviews` 权限不是「所有用户可读写」。
 
 ### 3. 部署云函数
 
@@ -101,7 +107,18 @@ for d in cloudfunctions/*/; do (cd "$d" && npm ci); done
 python scripts/deploy_cloud.py           # 干跑：只打印命令，不上传
 python scripts/deploy_cloud.py --apply   # 真部署（需 IDE 已登录 + 服务端口开启）
 python scripts/deploy_cloud.py --check   # 核对云端函数清单
+python scripts/verify_cloud_deploy.py    # ★部署验证：download 云端代码做 md5 逐文件比对
 ```
+
+> ⚠️ **`deploy` 返回 `success=true` 不可信** —— 新建函数后立刻部署会报
+> 「当前函数处于 Creating 状态，无法进行此操作」，但 CLI 仍返回 rc=0，
+> 脚本会把失败函数列进「部署成功」。**唯一可信的验证是 `verify_cloud_deploy.py`**：
+> 它把云端代码 download 回临时目录，对 `index.js` / `config.json` / `package.json`
+> / `sec-check.js` / `llm.js` / `injection.js` 逐个算 md5 与本地比对。
+> 2026-10-26 实测：5 个深度面试云函数全部逐字节一致 ✅
+>
+> ⚠️ CLI 参数易错：`deploy` 用 `--names`（复数）、`download` 用 `--name`（单数）
+> 且下载目录参数是 `--path`（不是 `--dest`）。
 
 **方式 B**：对 `cloudfunctions/` 下每个目录右键 → 「上传并部署：云端安装依赖」，
 建议先上 `login`，方便最早验证连通性。
@@ -133,7 +150,7 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 > `-604101` = 无权限调用此 API，需给云函数配置云调用权限 · `-604102` = 调用超时。
 >
 > ⚠️ **别再把 `-504002` 当成"云函数未部署"**。2026-10-26 用开发者工具 CLI 实测：
-> 本项目 **10 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` timeout 60 /
+> 本项目 **15 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` timeout 60 /
 > runtime Nodejs16.13，依赖 `wx-server-sdk ~2.6.3` 完整）。
 > 所以 `-504002` 一律按「**云函数内部抛了异常**」处理 —— 去 `message:` 字段和云函数日志里找真因。
 >
@@ -147,7 +164,7 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 >
 > **一键确认云端缺哪个函数**（只读探测，不写库、不推送、不调 LLM）：
 > 临时在 `miniprogram/pages/question/question.ts` 的 `onLoad` 开头加
-> `require("../../../tests/diag_cloud.js");`，编译后 Console 会逐个列出 10 个云函数的部署状态，
+> `require("../../../tests/diag_cloud.js");`，编译后 Console 会逐个列出云函数的部署状态，
 > 并指出哪些缺失。用完删掉该行。
 >
 > **命令行核对云端清单**（需 IDE「设置 → 安全设置 → 服务端口」开启）：
@@ -161,7 +178,8 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 > **云函数部署完整性**
 >
 > 部署顺序见 `scripts/deploy_cloud.py` 的 `ORDER`：
-> `login → getQuestions → genQuestions → submitPractice → getPractice → getHistory → updateTranscript → asr → analyze → finalize`。
+> `login → getQuestions → genQuestions → submitPractice → getPractice → getHistory → updateTranscript → asr → analyze → finalize`
+> `→ parseResume → analyzeJob → genDeepQuestions → deepSession → deepAnalyze`（深度面试链路）。
 > **中途任一函数部署失败，后面的都不会自动部署** —— 这是最常见的"跑到一半才发现后面全缺"。
 >
 > 补齐方式（二选一）：
@@ -203,6 +221,156 @@ python scripts/deploy_cloud.py --check   # 核对云端函数清单
 
 **核心原则**：0 Key 也能跑通主链路（录音 → 人工输入转写 → 规则化评估 → 报告），
 接入 Key 后升级为真·语音识别 + 大模型点评。
+
+---
+
+## 🧠 深度面试链路（简历驱动，2026-10-26 新增）
+
+除「单题练习 → 表达五维能力图」外，本项目新增一条**与单题练习并列**的独立链路：
+
+```
+上传简历 → 结构化解析(可核对修正) → 岗位分析(能力标准)
+        → 生成 15~20 道强关联题目 → 逐题作答(追问/要点提示/用时记录)
+        → 6 维能力雷达 + 优势短板 + 4 类优化建议
+```
+
+页面：`pages/resume` → `pages/deep` → `pages/deep-report`（3 页）
+云函数：`parseResume` / `analyzeJob` / `genDeepQuestions` / `deepSession` / `deepAnalyze`（5 个）
+
+> **为什么独立成一条链路而不复用单题练习的页面**：
+> 单题练习是 3 页（question → record → result），深度面试是 15~20 题**一题一屏**，
+> 若每题跳一次页面会撞上小程序 **10 层页面栈上限**。故独立成 3 页 + 5 云函数。
+
+### ① 整体流程的状态管理
+
+**两层状态**，各司其职：
+
+**A. 页面级状态机**（管 UI 渲染与防重入）
+
+| 页面 | 状态流转 | 关键 flag |
+|---|---|---|
+| `resume` | `upload → uploading → parsing → review → job → generating → ready` | `uploading` / `parsing` / `analyzingJob` / `generating` |
+| `deep` | `loading → ready → answering → scoring → (next \| completing → done)` | `loading` / `submitting` / `completing` |
+| `deep-report` | `loading → (ready \| failed)` | `loading` / `analyzing` |
+
+**B. 跨页状态落在云端 `interviews` 集合**（不依赖页面栈）
+
+```
+interviews 文档结构：
+{ _id, openid, status, resume, job, competency,
+  questions[15-20], answers[], currentIndex, report, createdAt, updatedAt }
+status: draft → questions_ready → in_progress → analyzing → done
+```
+
+- 每题作答**立即**写回云端（`deepSession` 的 `answer` action）；
+- 页面每次 `onShow` 都 `deepSession/get` 拉一次 → **中途退出、页面被系统杀掉都能续答**；
+- `currentIndex` 由服务端维护为「第一个未答题的序号」，前端不自己算。
+
+**C. 铁律遵守情况**（与「状态锁铁律」一节逐条对应）
+
+| 铁律 | 本链路的落实 |
+|---|---|
+| ① 不用 `disabled` 防重入 | 3 个页面所有按钮**均无 `disabled` 属性**（`scripts/static_check.js` 自动检查） |
+| ② 锁有不依赖回调的解锁路径 | `nav-guard` 时间戳锁（3s 自动过期）+ `onShow` 兜底 `unlock()` |
+| ③ 锁用时间戳 | 复用 `utils/nav-guard.ts`，`now` 可注入 |
+| ④ 置 true 的 flag ≥2 处置回 false | 每个 flag 都有 catch 分支 + finally 兜底两处复位 |
+| ⑤ 失败路径也要能自愈 | 回归测试 B3/B4/B7 专门断言「失败时 flag 仍归位」 |
+| ⑥ 业务前置 ≠ 防重入 | 业务前置走 JS 拦截 + 可操作提示（"请先上传并解析简历"等） |
+| ⑦ 多状态页逐状态核查出口 | `resume` 7 态、`deep` 6 态逐个核查，均有出口 |
+
+**D. 超时规避**（关键设计）
+
+逐题评分**在答题时同步完成**（每次仅 1 次 LLM 调用），最终总结只需 1 次调用。
+→ 单次云函数调用只做一件事，天然规避云函数 20s 超时；
+→ 且用户每提交一题就立刻看到得分与要点反馈，交互体验优于「答完 15 题后才出结果」。
+
+### ② 题目生成的数据结构设计
+
+```ts
+// miniprogram/utils/interview.ts（前后端共用口径）
+export const MIN_QUESTIONS = 15;   // 前后端同一份常量
+export const MAX_QUESTIONS = 20;
+
+export interface InterviewQuestion {
+  id: string;                    // "q1".."q20"，服务端重排保证连续
+  question: string;              // 题干
+  type: "project" | "technical" | "business" | "scenario" | "behavior";
+  difficulty: "简单" | "中等" | "困难";
+  competency: "technicalDepth" | "projectAuthenticity" | "businessInsight"
+            | "problemSolving" | "jobFit" | "communication";
+  evidence: string;              // ★与简历强关联的锚点（哪个项目/哪个数字）
+  followups: string[];           // 追问（≤3）
+  keyPoints: string[];           // 参考答案要点（≤5，评分依据）
+  estimatedSec: number;          // 建议作答时长
+}
+
+export interface AnswerRecord {
+  questionId, answer, durationSec,
+  hit: string[], missed: string[],   // 命中/遗漏的要点
+  score: number,                     // 单题 1-5
+  feedback: string, answeredAt: number;
+}
+```
+
+**出题的四级补齐链**（`genDeepQuestions`）——保证**用户永远拿到 ≥15 道题**：
+
+```
+LLM 出题（prompt 要求 18 道，强关联简历，每题必带 evidence）
+  ↓ 归一化：字段缺失补默认、type/difficulty/competency 白名单过滤
+  ↓ 去重：题干归一化后取前 60 字符建 set
+模板题（按简历项目/经历/获奖/技能生成，evidence 锚定真实内容）
+  ↓ 仍不足 15 → 继续补
+岗位通用题（18 道兜底，evidence 标注"简历信息有限，题目偏通用"）
+  ↓ 截断到 20，重排 id
+```
+
+**关键约束**：
+- `evidence` 是**硬要求**——每题必须指向简历里真实出现的项目/公司/数字，避免通用题；
+- `missed` 必须是该题 `keyPoints` 的子集（服务端过滤 `missedRaw.filter(m => kp.some(...))`），
+  防止 LLM 自造扣分项；
+- 覆盖度统计 `coverage.byType / byCompetency / byDifficulty` 一并返回，前端可展示题库分布。
+
+### ③ 异常情况的处理方式
+
+**A. 上传/解析失败**（`parseResume`）
+
+| 异常 | 处理 | 用户看到 |
+|---|---|---|
+| 格式不支持（pdf 等） | 服务端白名单 `/\.(txt\|md\|docx)$/i` 拦截 | 「仅支持 .txt / .md / .docx 格式的简历」 |
+| 越权下载他人简历 | `fileID.includes('/{openid}/')` 归属校验 | 「无权访问该简历文件」 |
+| 文件损坏 / docx 结构异常 | 解包失败 → 明确区分「换文件」vs「改格式」 | 「简历解析失败：文件无法读取…」 |
+| 内容为空 / 不足 20 字 | 长度闸门 | 「简历内容为空」/「简历内容过短」 |
+| 违规内容 | `msgSecCheck` 拦截（违规必拒） | 「简历内容包含违规信息」 |
+| 命中 prompt 注入 | **不采信 LLM**，降级规则解析 | 告警「检测到可疑指令，请仔细核对」 |
+| **LLM 未配 Key / 调用失败** | **降级规则解析**（`ruleParse`），仍返回结构化草稿 | 弹窗「AI 解析暂不可用，已按关键词规则识别…请逐项核对」 |
+
+> ★最后一条是本链路最重要的设计：**LLM 不可用时功能不中断**，
+> 用户拿到的是规则识别的结构化草稿 + 明确告警，而不是一个报错页。
+
+**B. 题目数量不足**（三级防线）
+
+1. **服务端**：四级补齐链保证 ≥15（见上）；若极端情况下仍不足，返回 `countWarning` 字段如实告知；
+2. **前端拦截**：`questions.length < MIN_QUESTIONS` → **不静默放行**，
+   弹 modal「题目数量不足（实际 N/15）…请回到上一步补充项目/经历细节后重新生成」，
+   且**不写入云端会话**、**不进入 ready 步骤**；
+3. **进入答题前二次校验**：`onStartInterview` 再查一次 `[15,20]` 区间，
+   越界则 toast 拦截并提示重新生成。
+
+**C. 答题中途异常**
+
+| 异常 | 处理 |
+|---|---|
+| 单题评分 LLM 失败 | 中性分 3 分 + 「本次评分暂不可用，已记录你的回答」，**不丢答案** |
+| 回答命中注入 | 中性分 3 分 + 标记待人工关注，**不采信 LLM 输出** |
+| 页面中途退出 | 答案已逐题写回云端 → 重进自动续答到 `currentIndex` |
+| 用户正在输入时 onShow 触发 | `hasDraft` 判定保留本地草稿，**不被云端空答案覆盖** |
+| 提交失败 | `submitting` 归位 + `loadFailed` 置位 + 错误可见 |
+| 总结生成失败 | `completing` 归位 + 错误提示 + 可在报告页「重新加载」重试 |
+
+**D. 越权防护**（`deepSession` / `deepAnalyze`）
+
+所有 action 统一校验 `doc.openid === OPENID`，越权返回「无权访问该面试记录」。
+回归测试 A4 专门断言「他人无法读取 / 无法提交答案」。
 
 ---
 
@@ -282,10 +450,17 @@ this._guard.dispose();
 | `tests/question_go_button.test.js` | 出题页「去作答」+「换一题」+ 业务前置分流 | 7 场景 / 29 断言 |
 | `tests/share_poster_save_button.test.js` | 海报「保存到相册」**成功/失败/销毁三条解锁路径** | 7 场景 / 13 断言 |
 | `tests/record_state_machine.test.js` | 录音页 8 态状态机（每个状态的出口 + 失败路径自愈） | 13 场景 / 48 断言 |
+| `tests/deep_flow.test.js` | 深度面试全链路（出题补齐 / 会话状态机 / 越权 / 三页状态机 / 草稿保护） | 16 场景 / 128 断言 |
 
-> 全量口径：`npm test` → **11 个测试文件 / 299 条断言 / 68 个场景**，失败 0；
+> 全量口径：`npm test` → **12 个测试文件 / 427 条断言 / 84 个场景**，失败 0；
 > 数字可用 `node scripts/count_assertions.js` 一键复现（脚本直接读 `package.json` 的
 > test 列表，不会与实际测试文件漂移）。
+>
+> 静态自检（WXML 事件绑定 / 模板变量 / 标签配对 / `disabled` 铁律）：
+> ```bash
+> node scripts/static_check.js          # 全部页面
+> node scripts/static_check.js resume   # 只查某页
+> ```
 
 > ⚠️ 组件（`Component()`）的 TS 类型**不接受顶层自定义字段**，
 > 守卫要挂到实例上：`(this as any)._guard = createNavGuard(...)`。

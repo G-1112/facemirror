@@ -52,5 +52,18 @@
   <button class="btn-primary start-btn {{navigating ? 'is-busy' : ''}}" bindtap="onStart">
     {{navigating ? '跳转中…' : '开始练习'}}
   </button>
+
+  <!--
+    深度面试（简历驱动）：与「单题练习」并列的第二条链路。
+    走独立页面 → 独立云函数 → 独立的 6 维能力雷达，不与单题练习的状态混用。
+  -->
+  <view class="deep-entry" bindtap="onDeep">
+    <view class="deep-left">
+      <view class="deep-title">深度面试 · 简历驱动</view>
+      <view class="deep-desc">上传简历 → 岗位分析 → 15~20 道针对性题目 → 逐题作答 → 6 维能力总结</view>
+    </view>
+    <view class="deep-arrow">›</view>
+  </view>
+
   <view class="history-link" bindtap="onHistory">查看历史记录 →</view>
 </view>

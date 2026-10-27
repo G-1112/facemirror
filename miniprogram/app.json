@@ -4,7 +4,10 @@
     "pages/question/question",
     "pages/record/record",
     "pages/result/result",
-    "pages/history/history"
+    "pages/history/history",
+    "pages/resume/resume",
+    "pages/deep/deep",
+    "pages/deep-report/deep-report"
   ],
   "window": {
     "navigationBarBackgroundColor": "#2563eb",

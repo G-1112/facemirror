@@ -17,7 +17,17 @@ function makeCollection(store, name) {
   const coll = store[name];
 
   const matches = (doc, where) =>
-    Object.entries(where || {}).every(([k, v]) => doc[k] === v);
+    Object.entries(where || {}).every(([k, v]) => {
+      if (v && typeof v === "object") {
+        // 比较操作符：gte / lte / gt / lt / ne
+        if ("__gte" in v) return Number(doc[k]) >= v.__gte;
+        if ("__lte" in v) return Number(doc[k]) <= v.__lte;
+        if ("__gt" in v) return Number(doc[k]) > v.__gt;
+        if ("__lt" in v) return Number(doc[k]) < v.__lt;
+        if ("__ne" in v) return doc[k] !== v.__ne;
+      }
+      return doc[k] === v;
+    });
 
   return {
     where(cond) {
@@ -125,6 +135,12 @@ function loadFunction(fnName, opts = {}) {
   const dbCommand = {
     inc: (n) => ({ __inc: n }),
     remove: () => ({ __remove: true }),
+    // 比较操作符（真实云开发 db.command 支持）
+    gte: (n) => ({ __gte: n }),
+    lte: (n) => ({ __lte: n }),
+    gt: (n) => ({ __gt: n }),
+    lt: (n) => ({ __lt: n }),
+    ne: (n) => ({ __ne: n }),
   };
 
   const cloudMock = {

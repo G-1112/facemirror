@@ -46,6 +46,12 @@ ORDER = [
     "asr",             # 依赖腾讯云凭证，失败走人工输入
     "analyze",         # 依赖 LLM，失败降级 mock
     "finalize",        # 依赖订阅消息模板 ID
+    # ---- 深度面试链路（简历驱动）----
+    "parseResume",     # 简历解析（含 docx 解包）
+    "analyzeJob",      # 岗位分析
+    "genDeepQuestions",  # 出题（15~20 道）
+    "deepSession",     # 会话状态中枢（跨页续答）
+    "deepAnalyze",     # 总结雷达
 ]
 
 DEFAULT_CLI_CANDIDATES = [

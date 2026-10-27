@@ -1,0 +1,236 @@
+/* 深度面试 · 总结报告页 */
+
+.page {
+  padding: 24rpx;
+  padding-bottom: 60rpx;
+}
+
+.loading {
+  padding: 120rpx 0;
+  text-align: center;
+}
+.loading-txt {
+  font-size: 28rpx;
+  color: #9ca3af;
+}
+.err-box {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 40rpx 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.04);
+}
+.err-txt {
+  font-size: 28rpx;
+  color: #991b1b;
+  line-height: 1.6;
+  margin-bottom: 24rpx;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16rpx;
+}
+.para {
+  font-size: 27rpx;
+  color: #374151;
+  line-height: 1.7;
+}
+.btn {
+  width: 100%;
+}
+.btn-hover {
+  opacity: 0.8;
+}
+
+/* ---- 总分 ---- */
+.score-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12rpx;
+}
+.score-num {
+  font-size: 84rpx;
+  font-weight: 700;
+  color: #2563eb;
+  line-height: 1;
+  margin-right: 24rpx;
+}
+.score-label {
+  font-size: 26rpx;
+  color: #6b7280;
+}
+.score-sub {
+  font-size: 22rpx;
+  color: #9ca3af;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+
+/* ---- 分项能力 ---- */
+.dim {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18rpx;
+}
+.dim-name {
+  width: 150rpx;
+  font-size: 26rpx;
+  color: #374151;
+  flex-shrink: 0;
+}
+.dim-bar {
+  flex: 1;
+  height: 16rpx;
+  background: #f1f5f9;
+  border-radius: 999rpx;
+  overflow: hidden;
+  margin: 0 16rpx;
+}
+.dim-fill {
+  height: 16rpx;
+  background: linear-gradient(90deg, #60a5fa, #2563eb);
+  border-radius: 999rpx;
+}
+.dim-score {
+  width: 70rpx;
+  text-align: right;
+  font-size: 24rpx;
+  color: #6b7280;
+  flex-shrink: 0;
+}
+
+/* ---- 优势 / 短板 ---- */
+.sw {
+  padding: 20rpx 0;
+  border-top: 2rpx solid #f3f4f6;
+}
+.sw:first-of-type {
+  border-top: none;
+}
+.sw-head {
+  margin-bottom: 8rpx;
+}
+.sw-dim {
+  font-size: 24rpx;
+  color: #047857;
+  background: #d1fae5;
+  padding: 4rpx 14rpx;
+  border-radius: 8rpx;
+}
+.sw-text {
+  font-size: 27rpx;
+  color: #1f2937;
+  line-height: 1.6;
+}
+.sw-evi {
+  font-size: 23rpx;
+  color: #6b7280;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+.sw-weak {
+  border-left: 6rpx solid #fca5a5;
+  padding-left: 18rpx;
+}
+.sw-weak .sw-dim {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+/* ---- 建议 ---- */
+.sec {
+  margin-bottom: 28rpx;
+}
+.sec:last-child {
+  margin-bottom: 0;
+}
+.sec-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 14rpx;
+  padding-left: 16rpx;
+  border-left: 6rpx solid #2563eb;
+  line-height: 1.2;
+}
+.gap {
+  background: #f9fafb;
+  border-radius: 12rpx;
+  padding: 18rpx 20rpx;
+  margin-bottom: 14rpx;
+}
+.gap-topic {
+  font-size: 27rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 6rpx;
+}
+.gap-line {
+  font-size: 24rpx;
+  color: #4b5563;
+  line-height: 1.6;
+}
+.gap-res {
+  color: #047857;
+}
+.li {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10rpx;
+}
+.li-dot {
+  color: #2563eb;
+  margin-right: 10rpx;
+}
+.li-txt {
+  flex: 1;
+  font-size: 26rpx;
+  color: #374151;
+  line-height: 1.6;
+}
+
+/* ---- 逐题点评 ---- */
+.pq {
+  padding: 20rpx 0;
+  border-top: 2rpx solid #f3f4f6;
+}
+.pq:first-of-type {
+  border-top: none;
+}
+.pq-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8rpx;
+}
+.pq-no {
+  font-size: 24rpx;
+  color: #6b7280;
+}
+.pq-score {
+  font-size: 26rpx;
+  font-weight: 700;
+  color: #2563eb;
+}
+.pq-q {
+  font-size: 26rpx;
+  color: #1f2937;
+  line-height: 1.55;
+}
+.pq-fb {
+  font-size: 24rpx;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-top: 8rpx;
+}
+.pq-line {
+  font-size: 23rpx;
+  color: #047857;
+  margin-top: 6rpx;
+  line-height: 1.5;
+}
+.pq-miss {
+  color: #b91c1c;
+}
