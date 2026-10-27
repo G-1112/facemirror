@@ -10,6 +10,7 @@
 //      A6 单题评分：missed 必须是 keyPoints 子集；重答覆盖旧答案
 //      A7 总结：雷达恒 6 维、幂等、未作答报错
 //      A8 简历解析：格式白名单 / 归属校验 / 过短拦截 / LLM 不可用 → 规则降级
+//      A9 集合 interviews 不存在（-502005）→ 错误文案可操作（指路控制台建集合）
 //   B. 前端层（miniprogram/pages/{resume,deep}/ 真实 TS 源码，经 transpile+vm 驱动）
 //      B1 题目数量不足 → 弹 modal 且不进入 ready 步骤、不写云端
 //      B2 业务前置拦截（无简历 / 无岗位 / 岗位名为空）
@@ -580,6 +581,49 @@ async function testCloud() {
       JSON.stringify(normal.resume && normal.resume.skills)
     );
   }
+
+  console.log("\n场景 A9：★集合 interviews 不存在 → 给出可操作文案（而非无用的「请重试」）");
+  {
+    // 背景：集合是**手动建**的，不在云函数部署脚本覆盖范围内。
+    // 未建时 db 抛 -502005，原实现统一 catch 成「创建面试会话失败，请重试」，
+    // 用户根本不知道要先去控制台建集合 → 真机联调时最容易卡住的一步。
+    const ds = loadFunction("deepSession", { OPENID: "o_miss" });
+    ds.state.missingCollections.add("interviews");
+    const c = await ds.main({ action: "create" });
+    check(
+      "deepSession/create 识别 -502005 并指路控制台",
+      !!c.error && c.error.includes("集合 interviews 不存在") && c.error.includes("云开发控制台"),
+      JSON.stringify(c)
+    );
+
+    const ds2 = loadFunction("deepSession", { OPENID: "o_miss" });
+    ds2.state.missingCollections.add("interviews");
+    const g = await ds2.main({ action: "get", interviewId: "iv_x" });
+    check(
+      "deepSession/get 识别 -502005（不误报「记录不存在」）",
+      !!g.error && g.error.includes("集合 interviews 不存在") && !g.error.includes("面试记录不存在"),
+      JSON.stringify(g)
+    );
+
+    const da = loadFunction("deepAnalyze", { OPENID: "o_miss" });
+    da.state.missingCollections.add("interviews");
+    const a = await da.main({ interviewId: "iv_x" });
+    check(
+      "deepAnalyze 识别 -502005（不误报「记录不存在」）",
+      !!a.error && a.error.includes("集合 interviews 不存在") && !a.error.includes("面试记录不存在"),
+      JSON.stringify(a)
+    );
+
+    // 反向断言：集合已建但文档不存在时，**仍**必须是「面试记录不存在」，
+    // 不能被上面新增的分支误伤。
+    const da2 = loadFunction("deepAnalyze", { OPENID: "o_miss" });
+    const a2 = await da2.main({ interviewId: "iv_nope" });
+    check(
+      "反向：集合已建、文档不存在 → 仍返回「面试记录不存在」",
+      !!a2.error && a2.error.includes("面试记录不存在") && !a2.error.includes("集合"),
+      JSON.stringify(a2)
+    );
+  }
 }
 
 // ================================================================ B. 前端层
@@ -967,7 +1011,7 @@ async function main() {
   await testFrontend();
   console.log("\n" + "=".repeat(56));
   if (failed === 0) {
-    console.log("全部通过：16 个场景均符合预期");
+    console.log("全部通过：17 个场景均符合预期");
   } else {
     console.log("失败 " + failed + " 项");
   }

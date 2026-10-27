@@ -3,7 +3,7 @@
 > 目标：把「云开发未开通 / ASR 未接 / 真机零实测」三个缺口，在一次连续作业内全部关掉，
 > 并产出可提交的取证材料（截图 8 张 + 录屏 + 体验二维码）。
 >
-> 前置状态（2026-10-26 实测）：`npm test` **12 个测试文件 / 427 条断言 / 84 个场景**全过、
+> 前置状态（2026-10-26 实测）：`npm test` **12 个测试文件 / 431 条断言 / 85 个场景**全过、
 > `tsc --noEmit` 通过（断言数用 `node scripts/count_assertions.js` 复现）、
 > `node scripts/static_check.js` 8 个页面 0 缺陷、15 个云函数代码完整；
 > **云开发环境已开通**（环境 ID `cloudbase-d1g6atosn49a1b532`，15 个云函数 CLI 实测 status=Active，
@@ -74,6 +74,11 @@ AppID             : wx5f84fd45875f4924
 | `rate_limits` | genQuestions | 代码 catch 后**静默失败** → 出题限流失效（这也是 `npm test` 里那行 `db.command.gte is not a function` 的来源，测试环境无真实命令对象，属预期） |
 | `questions` | getQuestions | 抽题返回空数组，首页「开始练习」点不动 |
 | `interviews` | deepSession / deepAnalyze（深度面试） | **深度面试会话无处存放** → 简历页生成题目后保存失败，进答题页报「面试记录不存在」 |
+
+> ★`interviews` 漏建是本链路部署最常见的坑。云函数是自动部署的，**数据库集合必须手动建**。
+> 代码侧已把 `-502005`（集合不存在）识别出来，弹窗会直接告诉你
+> 「数据库集合 interviews 不存在，请先在云开发控制台创建该集合（权限选「仅创建者可读写」）」，
+> **不要再根据「请重试」去反复重试**。
 
 > 旧文档写的「users / practices / questions 三个集合」是错的：代码里没有 `users`，
 > 但有 `quota` 与 `rate_limits`。按旧文档建库会踩两个静默降级。

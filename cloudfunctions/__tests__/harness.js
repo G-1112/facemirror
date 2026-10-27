@@ -12,7 +12,27 @@ const path = require("path");
 const Module = require("module");
 
 /** 简易内存「集合」 */
-function makeCollection(store, name) {
+function makeCollection(store, name, state) {
+  /**
+   * ★ 模拟「集合不存在」（2026-10-27 新增）。
+   * 真实云开发访问未创建的集合时抛 -502005。
+   * 用法：state.missingCollections = new Set(["interviews"]);
+   * ⚠️ 错误必须挂在 **异步操作**（get/update/set/add）上而不是 collection() 本身，
+   *    因为真实 SDK 也是在发请求时才失败 —— 挂在 collection() 会让同步抛出，
+   *    与真实行为不一致，可能测错分支。
+   */
+  const checkExists = () => {
+    if (state && state.missingCollections && state.missingCollections.has(name)) {
+      const err = new Error("collection is not exists");
+      err.errCode = -502005;
+      err.errMsg =
+        "cloud.callFunction:fail errCode -502005 errMsg: request:fail document collection " +
+        name +
+        " is not exist";
+      throw err;
+    }
+  };
+
   if (!store[name]) store[name] = [];
   const coll = store[name];
 
@@ -35,11 +55,13 @@ function makeCollection(store, name) {
         limit(n) {
           return {
             async get() {
+              checkExists();
               return { data: coll.filter((d) => matches(d, cond)).slice(0, n) };
             },
           };
         },
         async count() {
+          checkExists();
           return { total: coll.filter((d) => matches(d, cond)).length };
         },
         orderBy() {
@@ -49,6 +71,7 @@ function makeCollection(store, name) {
           return this;
         },
         async get() {
+          checkExists();
           return { data: coll.filter((d) => matches(d, cond)) };
         },
       };
@@ -56,10 +79,12 @@ function makeCollection(store, name) {
     doc(id) {
       return {
         async get() {
+          checkExists();
           const d = coll.find((x) => x._id === id);
           return { data: d ? { ...d } : null };
         },
         async update({ data }) {
+          checkExists();
           const d = coll.find((x) => x._id === id);
           if (!d) return { stats: { updated: 0 } };
           for (const [k, v] of Object.entries(data)) {
@@ -76,6 +101,7 @@ function makeCollection(store, name) {
         },
         // doc().set()：upsert（存在则更新，不存在则创建），支持原子指令
         async set({ data }) {
+          checkExists();
           let d = coll.find((x) => x._id === id);
           if (!d) {
             d = { _id: id };
@@ -95,6 +121,7 @@ function makeCollection(store, name) {
       };
     },
     async add({ data }) {
+      checkExists();
       const _id = `id_${coll.length + 1}_${Math.random().toString(36).slice(2, 8)}`;
       coll.push({ _id, ...data });
       return { _id };
@@ -106,6 +133,7 @@ function makeCollection(store, name) {
       return this;
     },
     async get() {
+      checkExists();
       return { data: [...coll] };
     },
   };
@@ -117,6 +145,8 @@ function resetMocks(state) {
   state.openid = "";
   state.sent = [];
   state.warnings = [];
+  // missingCollections：模拟「集合未创建」（访问时抛 -502005）
+  state.missingCollections = new Set();
 }
 
 /**
@@ -130,6 +160,8 @@ function loadFunction(fnName, opts = {}) {
     openid: opts.OPENID || "",
     sent: [],
     warnings: [],
+    // 模拟「集合未创建」：测试里 state.missingCollections.add("interviews")
+    missingCollections: new Set(),
   };
 
   const dbCommand = {
@@ -149,7 +181,7 @@ function loadFunction(fnName, opts = {}) {
     database() {
       const api = {
         command: dbCommand,
-        collection: (name) => makeCollection(state.store, name),
+        collection: (name) => makeCollection(state.store, name, state),
       };
       return api;
     },

@@ -25,6 +25,37 @@ const DIMENSION_NAMES = {
   communication: "表达沟通",
 };
 
+/**
+ * 从异常里提取错误码（errCode / errcode / errMsg 里的数字）。
+ * ⚠️ 云函数之间不能跨目录 require，所以本文件内联一份与 deepSession 相同的副本
+ *    （深链接云函数不能共享模块，只能靠"同源复制 + md5 校验"保持一致）。
+ */
+function extractCode(err) {
+  if (!err) return "";
+  const direct = err.errCode != null ? err.errCode : err.errcode;
+  if (direct != null && direct !== "") return String(direct).trim();
+  const raw = String(err.errMsg || err.message || "");
+  const m = raw.match(/-?\d{6}/);
+  return m ? m[1] : "";
+}
+
+/**
+ * 把底层数据库异常翻译成**用户能据此行动**的文案。
+ * 集合 `interviews` 未建时抛 -502005，原实现统一返回「面试记录不存在，请重新开始」，
+ * 会让用户误以为自己操作错了 —— 实际是部署漏建集合（集合需手动建，不在部署脚本覆盖范围）。
+ */
+function describeDbError(err, fallback) {
+  const code = extractCode(err);
+  if (code === "-502005") {
+    return "数据库集合 interviews 不存在，请先在云开发控制台创建该集合（权限选「仅创建者可读写」）";
+  }
+  if (code === "-502003") {
+    return "数据库权限校验失败，请检查 interviews 集合的权限设置";
+  }
+  console.error("[deepAnalyze] 数据库异常 code=" + (code || "?"), err && (err.errMsg || err.message));
+  return fallback;
+}
+
 const SUMMARY_SYSTEM = `你是资深面试评审。基于候选人的简历、目标岗位和**全部回答记录**，产出结构化面试总结。
 
 要求：
@@ -120,6 +151,14 @@ exports.main = async (event) => {
     const res = await db.collection(COL).doc(interviewId).get();
     doc = res && res.data;
   } catch (e) {
+    // ⚠️ 必须区分「集合不存在(-502005)」与「文档不存在」：
+    //    前者是部署漏建集合，必须明确告知，否则用户只看到
+    //    「面试记录不存在，请重新开始」，会误以为自己操作错了。
+    const code = extractCode(e);
+    if (code === "-502005") {
+      console.error("[deepAnalyze] 集合不存在 code=-502005");
+      return { error: describeDbError(e, "面试记录不存在，请重新开始") };
+    }
     return { error: "面试记录不存在，请重新开始" };
   }
   if (!doc) return { error: "面试记录不存在，请重新开始" };
@@ -243,7 +282,7 @@ exports.main = async (event) => {
     });
   } catch (e) {
     console.error("保存总结失败:", e.message);
-    return { error: "保存总结失败，请重试" };
+    return { error: describeDbError(e, "保存总结失败，请重试") };
   }
 
   return { report };

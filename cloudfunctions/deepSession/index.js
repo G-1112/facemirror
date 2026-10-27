@@ -21,6 +21,42 @@ const COL = "interviews";
 const MAX_QUESTIONS = 20;
 const DEFAULT_ANSWER_SEC = 120;
 
+/**
+ * 从异常里提取错误码（errCode / errcode / errMsg 里的数字）。
+ * 微信云开发的数据库错误码形如 -502005（集合不存在）/ -502003（权限校验失败）。
+ */
+function extractCode(err) {
+  if (!err) return "";
+  const direct = err.errCode != null ? err.errCode : err.errcode;
+  if (direct != null && direct !== "") return String(direct).trim();
+  const raw = String(err.errMsg || err.message || "");
+  const m = raw.match(/-?\d{6}/);
+  return m ? m[1] : "";
+}
+
+/**
+ * 把底层数据库异常翻译成**用户能据此行动**的文案。
+ *
+ * ★为什么要专门做这件事（2026-10-27 真机联调前发现）：
+ *   集合 `interviews` 未建时，`db.collection().add()` 抛 -502005，
+ *   原实现 catch 里统一 return { error: "创建面试会话失败，请重试" }，
+ *   → 用户只看到一句无用的「请重试」，根本不知道是**数据库集合没建**，
+ *     而这恰恰是首次部署最容易漏的一步（集合是手动建的，不在部署脚本覆盖范围）。
+ *   → 现在把「集合不存在」明确识别出来并给出可操作指引。
+ *   真实 errCode 仍只进云函数日志（console.error），不外泄给前端。
+ */
+function describeDbError(err, fallback) {
+  const code = extractCode(err);
+  if (code === "-502005") {
+    return "数据库集合 interviews 不存在，请先在云开发控制台创建该集合（权限选「仅创建者可读写」）";
+  }
+  if (code === "-502003") {
+    return "数据库权限校验失败，请检查 interviews 集合的权限设置";
+  }
+  console.error("[deepSession] 数据库异常 code=" + (code || "?"), err && (err.errMsg || err.message));
+  return fallback;
+}
+
 const SCORE_SYSTEM = `你是严格的技术面试官，正在评估候选人对一道面试题的回答。
 
 要求：
@@ -39,6 +75,14 @@ async function loadOwned(interviewId, openid) {
     doc = res && res.data;
   } catch (e) {
     // 文档不存在时云开发会抛错 → 转成友好提示
+    // ⚠️ 但要区分「集合不存在」与「文档不存在」：
+    //    前者是部署漏建集合（-502005），必须明确告知，否则用户只看到
+    //    「面试记录不存在，请重新开始」，会误以为自己操作错了。
+    const code = extractCode(e);
+    if (code === "-502005") {
+      console.error("[deepSession] 集合不存在 code=-502005");
+      return { error: describeDbError(e, "面试记录不存在，请重新开始") };
+    }
     return { error: "面试记录不存在，请重新开始" };
   }
   if (!doc) return { error: "面试记录不存在，请重新开始" };
@@ -74,7 +118,7 @@ exports.main = async (event) => {
       return { interviewId: res._id };
     } catch (e) {
       console.error("创建深度面试会话失败:", e.message);
-      return { error: "创建面试会话失败，请重试" };
+      return { error: describeDbError(e, "创建面试会话失败，请重试") };
     }
   }
 
@@ -98,7 +142,7 @@ exports.main = async (event) => {
       await db.collection(COL).doc(doc._id).update({ data: patch });
     } catch (e) {
       console.error("更新面试会话失败:", e.message);
-      return { error: "保存失败，请重试" };
+      return { error: describeDbError(e, "保存失败，请重试") };
     }
     return { ok: true, interviewId: doc._id };
   }
@@ -210,7 +254,7 @@ exports.main = async (event) => {
       });
     } catch (e) {
       console.error("保存答案失败:", e.message);
-      return { error: "保存答案失败，请重试" };
+      return { error: describeDbError(e, "保存答案失败，请重试") };
     }
 
     return {
