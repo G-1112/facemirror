@@ -13,6 +13,7 @@ function getAppInstance(): IAppOption {
 interface QuizItem extends QuizQuestion {
   index: number;
   shortCategory: string;
+  diffClass: string; // 难度的 ASCII 类名（easy/mid/hard），WXSS 不支持中文类名
 }
 
 Page({
@@ -87,6 +88,9 @@ Page({
         ...q,
         index: i,
         shortCategory: q.category,
+        // ★WXSS 类名不支持中文（.q-diff-简单 会编译报错 unexpected character），
+        // 难度 → ASCII 类名在这里预计算，模板只拼 ASCII
+        diffClass: q.difficulty === "简单" ? "easy" : q.difficulty === "困难" ? "hard" : "mid",
       }));
       if (!list.length) {
         this.setData({ loading: false, loadFailed: true, errorMsg: "未抽到题目，请先在云开发控制台导入题库（questions.import.json）" });

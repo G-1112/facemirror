@@ -86,17 +86,17 @@
   font-size: 22rpx;
 }
 
-.q-diff-简单 {
+.diff-easy {
   background: #ecfdf5;
   color: #059669;
 }
 
-.q-diff-中等 {
+.diff-mid {
   background: #fffbeb;
   color: #b45309;
 }
 
-.q-diff-困难 {
+.diff-hard {
   background: #fef2f2;
   color: #b91c1c;
 }

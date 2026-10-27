@@ -113,6 +113,21 @@ function checkPage(name) {
 
   const problems = [];
 
+  // ⑤ WXSS 选择器不得含中文（2026-10-27 实踩：.q-diff-简单 编译报
+  //    "unexpected character"，页面白屏）。选择器行 = 以 . # @ [ & 开头且含中文。
+  const wxssPath = path.join(PAGES_DIR, name, name + ".wxss");
+  if (fs.existsSync(wxssPath)) {
+    const lines = fs.readFileSync(wxssPath, "utf8").split(/\r?\n/);
+    const badSel = [];
+    lines.forEach((l, i) => {
+      const t = l.trim();
+      if (/^[.#@\[&]/.test(t) && /[\u4e00-\u9fa5]/.test(t)) badSel.push(`行${i + 1}: ${t.slice(0, 40)}`);
+    });
+    if (badSel.length) {
+      problems.push(`★WXSS 选择器含中文（编译会报 unexpected character，改用 ASCII 类名）: ${badSel.join(" | ")}`);
+    }
+  }
+
   // ① 事件绑定的函数必须在 TS 中定义
   const handlers = new Set();
   for (const m of wxml.matchAll(/(?:bind|catch)[a-zA-Z]+="([A-Za-z_][\w]*)"/g)) handlers.add(m[1]);
