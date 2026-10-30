@@ -6,6 +6,7 @@ const { escapeForPrompt, scanInjection } = require("./injection");
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
+const _ = db.command;
 
 const COL = "interviews";
 const DIMENSION_KEYS = [
@@ -53,7 +54,16 @@ function describeDbError(err, fallback) {
     return "数据库权限校验失败，请检查 interviews 集合的权限设置";
   }
   console.error("[deepAnalyze] 数据库异常 code=" + (code || "?"), err && (err.errMsg || err.message));
-  return fallback;
+  // ★兜底文案必须携带真实错误码（2026-10-29 联调实测教训，与 deepSession 同源同步）：
+  //   未识别的数据库错误码只会返回笼统「请重试」→ 用户无法定位、反复空重试。
+  //   -502001 是通用包装码，真实原因在底层 errMsg → 一并透传。
+  const detail = String((err && (err.errMsg || err.message)) || "").replace(/\s+/g, " ").trim().slice(0, 120);
+  return (
+    fallback +
+    "（数据库错误码 " + (code || "未知") +
+    (detail ? "：" + detail : "") +
+    "）"
+  );
 }
 
 const SUMMARY_SYSTEM = `你是资深面试评审。基于候选人的简历、目标岗位和**全部回答记录**，产出结构化面试总结。
@@ -278,7 +288,10 @@ exports.main = async (event) => {
 
   try {
     await db.collection(COL).doc(interviewId).update({
-      data: { report, status: "done", updatedAt: Date.now() },
+      // ★report 必须用 _.set 整体覆盖（与 deepSession update 同根因，2026-10-30）：
+      //   create 把 report 初始化为 null，云开发 update 深度合并会把对象展开成
+      //   点路径 $set → 撞 null 父字段报「Cannot create field」→ -502001。
+      data: { report: _.set(report), status: "done", updatedAt: Date.now() },
     });
   } catch (e) {
     console.error("保存总结失败:", e.message);

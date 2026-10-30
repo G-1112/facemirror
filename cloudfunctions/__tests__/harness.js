@@ -93,11 +93,13 @@ function makeCollection(store, name, state) {
           const d = coll.find((x) => x._id === id);
           if (!d) return { stats: { updated: 0 } };
           for (const [k, v] of Object.entries(data)) {
-            // 支持原子指令 { __inc: n } 与字段删除 { __remove: true }
+            // 支持原子指令 { __inc: n }、字段删除 { __remove: true }、整体覆盖 { __set: v }
             if (v && typeof v === "object" && "__inc" in v) {
               d[k] = (d[k] || 0) + v.__inc;
             } else if (v && typeof v === "object" && "__remove" in v) {
               delete d[k];
+            } else if (v && typeof v === "object" && "__set" in v) {
+              d[k] = v.__set; // _.set = 整体替换，不展开点路径
             } else {
               d[k] = v;
             }
@@ -176,6 +178,9 @@ function loadFunction(fnName, opts = {}) {
   const dbCommand = {
     inc: (n) => ({ __inc: n }),
     remove: () => ({ __remove: true }),
+    // ★set 指令（2026-10-30 新增）：deepSession/deepAnalyze 用 _.set() 整体覆盖
+    //   null 初始化的对象字段（修复 -502001 Cannot create field）。mock 必须对齐。
+    set: (v) => ({ __set: v }),
     // 比较操作符（真实云开发 db.command 支持）
     gte: (n) => ({ __gte: n }),
     lte: (n) => ({ __lte: n }),

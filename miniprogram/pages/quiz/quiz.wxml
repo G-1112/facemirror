@@ -4,10 +4,11 @@
     <text class="loading-txt">正在从题库抽题（{{catsLabel}}）…</text>
   </view>
 
-  <!-- 失败态：可重试 -->
+  <!-- 失败态：可重试；参数无效时改为引导回设置页（重试无意义） -->
   <view class="err-box" wx:elif="{{loadFailed}}">
     <view class="err-txt">{{errorMsg}}</view>
-    <button class="btn-primary retry-btn" bindtap="onRetry" hover-class="btn-hover">重新抽题</button>
+    <button wx:if="{{invalidParams}}" class="btn-primary retry-btn" bindtap="onBackToSetup" hover-class="btn-hover">返回选择科目</button>
+    <button wx:else class="btn-primary retry-btn" bindtap="onRetry" hover-class="btn-hover">重新抽题</button>
   </view>
 
   <block wx:else>

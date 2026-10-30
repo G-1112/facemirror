@@ -96,7 +96,7 @@
     </view>
 
     <view class="card">
-      <button class="btn btn-primary" bindtap="onAnalyzeJob" hover-class="btn-hover">
+      <button class="btn btn-primary" bindtap="onToJobStep" hover-class="btn-hover">
         {{analyzingJob ? '分析中…' : '下一步：填写目标岗位'}}
       </button>
       <button class="btn btn-ghost" bindtap="onReparse" hover-class="btn-hover">换一份简历</button>
@@ -125,6 +125,13 @@
       </view>
     </view>
 
+    <!-- 岗位分析动作按钮：放在表单之后（岗位名称必填，由 onAnalyzeJob 校验） -->
+    <view class="card">
+      <button class="btn btn-primary" bindtap="onAnalyzeJob" hover-class="btn-hover">
+        {{analyzingJob ? '岗位分析中…' : '开始岗位分析'}}
+      </button>
+    </view>
+
     <view class="card" wx:if="{{competencyView.competencies.length > 0}}">
       <view class="card-title">岗位能力评估标准</view>
       <view class="comp" wx:for="{{competencyView.competencies}}" wx:key="key">
@@ -139,7 +146,8 @@
     </view>
 
     <view class="card">
-      <button class="btn btn-primary" bindtap="onGenerateQuestions" hover-class="btn-hover">
+      <!-- 未完成岗位分析时隐藏主按钮（点它只会 toast 引导），避免误导；分析成功后出现 -->
+      <button wx:if="{{job}}" class="btn btn-primary" bindtap="onGenerateQuestions" hover-class="btn-hover">
         {{generating ? '生成中…' : '生成 15~20 道面试题'}}
       </button>
       <button class="btn btn-ghost" bindtap="onBackToUpload" hover-class="btn-hover">返回上一步</button>

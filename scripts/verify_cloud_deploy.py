@@ -58,9 +58,17 @@ def env_id() -> str:
 
 
 def md5(path: str) -> str:
+    """内容 md5（忽略换行符差异）。
+
+    ★为什么必须忽略 \r\n（2026-10-29 实测教训）：
+      CLI download 拉回的云端文件与本地仓库在换行符上不一致（CRLF/LF），
+      但**字节内容完全相同**。直接对原始字节算 md5 会把 17 个函数全部误判为
+      DIFF（login/deepSession 人工 diff 证实内容零差异）。
+      因此这里统一把 \r\n / \r 归一化成 \n 后再哈希，只对真实内容差异报警。
+    """
     h = hashlib.md5()
     with open(path, "rb") as f:
-        h.update(f.read())
+        h.update(f.read().replace(b"\r\n", b"\n").replace(b"\r", b"\n"))
     return h.hexdigest()
 
 
@@ -78,11 +86,20 @@ def run(cli: str, args: list, timeout=300) -> subprocess.CompletedProcess:
 def list_cloud_functions(cli: str, eid: str):
     r = run(cli, ["cloud", "functions", "list", "--env", eid, "--project", PROJECT])
     out = (r.stdout or "") + (r.stderr or "")
+    # ★防假阳性（2026-10-29 实测）：服务端口关闭时 CLI 输出「服务端口已关闭」，
+    #   列表为空 → 旧版会得出「0 个函数 → 全部一致」的空转结论。
+    #   这里必须显式识别失败信号，拉不到列表就直接退出，绝不静默通过。
+    failure_marks = ["服务端口已关闭", "service port", "IDE service port disabled", "请开启服务端口"]
+    for mark in failure_marks:
+        if mark in out:
+            sys.exit("CLI 无法连接开发者工具（服务端口未开启）：请打开 工具 → 设置 → 安全设置 → 开启服务端口后重试")
     names = []
     for line in out.splitlines():
         s = line.strip()
         if s.startswith("*"):
             names.append(s.lstrip("* ").strip())
+    if not names:
+        sys.exit("未从云端拉取到任何函数（可能是认证/环境/端口问题）。0 个 ≠ 全部一致，拒绝空转通过。")
     return names
 
 

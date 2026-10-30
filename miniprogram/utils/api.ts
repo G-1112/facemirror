@@ -82,6 +82,12 @@ export interface PracticeDetail {
 /** 云函数调用超时（毫秒）。弱网/云函数挂起时不能让页面无限等待。 */
 const CALL_TIMEOUT_MS = 20000;
 
+/** LLM 类云函数超时（毫秒）。大模型推理普遍 20~40s，须与云函数控制台侧
+ *  超时（60s）匹配——2026-10-28 实测：key 配置后 analyzeJob 真实调用
+ *  DeepSeek，20s 即被云平台以 FUNCTIONS_TIME_LIMIT_EXCEEDED(-504003) 掐断。
+ *  ⚠️ 若控制台侧超时调整，这里必须同步（前端不得大于云端，否则白等）。 */
+export const CALL_TIMEOUT_LLM_MS = 60000;
+
 /**
  * 微信云开发错误码 → 中文文案。
  * 依据：微信开放文档《错误码》表
@@ -247,7 +253,15 @@ export function describeCallError(err: any): { text: string; raw: string; hint?:
 
   // ── 5. 云函数内部抛出的业务错误（形如 "Error: 内容安全检测暂不可用，请稍后重试"）──
   const msg = detail.replace(/^error\s*:?\s*/i, "").trim();
-  if (msg) return { text: msg.slice(0, 40), raw };
+  if (msg) {
+    const text = msg.slice(0, 40);
+    // ★业务错误超长时不能静默截断（2026-10-29 实测教训）：deepSession 的
+    //   describeDbError 会把「错误码 + 底层 errMsg」拼进文案（可达百余字），
+    //   slice(0,40) 会把最关键的诊断信息切掉 → 超出部分放进 hint，由
+    //   showCallError 的 modal 完整展示（toast 仍保持短文案）。
+    const hint = msg.length > 40 ? "完整原因：" + msg : undefined;
+    return { text, hint, raw };
+  }
   return { text: "服务调用失败，请稍后重试", raw };
 }
 
@@ -303,6 +317,12 @@ export interface CallOptions {
    * 主链路调用（题目加载、提交、评估、报告）**不要**开 quiet。
    */
   quiet?: boolean;
+  /**
+   * 自定义超时（毫秒）。默认 20s；LLM 类云函数（genQuestions/parseResume/
+   * analyzeJob/genDeepQuestions/deepSession.answer/deepAnalyze/quizScore/analyze）
+   * 传 CALL_TIMEOUT_LLM_MS（60s）。
+   */
+  timeoutMs?: number;
 }
 
 /**
@@ -327,7 +347,7 @@ export async function call<T = any>(
     const res = await Promise.race([
       wx.cloud.callFunction({ name, data }),
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(new Error("网络超时，请检查网络后重试")), CALL_TIMEOUT_MS);
+        timer = setTimeout(() => reject(new Error("网络超时，请检查网络后重试")), opts.timeoutMs ?? CALL_TIMEOUT_MS);
       }),
     ]);
     const result = res.result as ({ ok?: boolean; error?: string } & T) | null | undefined;
@@ -400,7 +420,7 @@ export function updateTranscript(recordId: string, transcript: string): Promise<
 
 /** 自定义出题：上传材料 → 生成针对性问题 */
 export function genQuestions(payload: { fileID: string; scene: string }): Promise<{ questions: { question: string; target: string; difficulty: string }[] }> {
-  return call("genQuestions", payload);
+  return call("genQuestions", payload, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 /** 获取题库题目 */
@@ -438,12 +458,12 @@ export function parseResume(payload: { fileID: string }): Promise<{
   resume: ResumeProfile;
   rawText: string;
 }> {
-  return call("parseResume", payload);
+  return call("parseResume", payload, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 /** 目标岗位 → 能力评估标准 */
 export function analyzeJob(payload: { job: JobProfile }): Promise<{ competency: CompetencyModel }> {
-  return call("analyzeJob", payload);
+  return call("analyzeJob", payload, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 /** 简历 + 岗位 + 能力标准 → 15~20 道强关联面试题 */
@@ -457,7 +477,7 @@ export function genDeepQuestions(payload: {
   source: string;
   countWarning: string;
 }> {
-  return call("genDeepQuestions", payload);
+  return call("genDeepQuestions", payload, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 /** 创建深度面试会话（返回 interviewId） */
@@ -505,12 +525,13 @@ export function submitDeepAnswer(payload: {
   totalCount: number;
   finished: boolean;
 }> {
-  return call("deepSession", { action: "answer", ...payload });
+  // answer 动作在服务端同步做单题评分（LLM），其余动作是纯数据库操作
+  return call("deepSession", { action: "answer", ...payload }, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 /** 生成深度面试总结（雷达 + 优势短板 + 优化建议） */
 export function deepAnalyze(interviewId: string): Promise<{ report: DeepReport }> {
-  return call("deepAnalyze", { interviewId });
+  return call("deepAnalyze", { interviewId }, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }
 
 // ---- 题库抽题（批量模式）接口 ----
@@ -530,5 +551,5 @@ export function quizScore(payload: {
   questions: { text: string; category: string; difficulty: string }[];
   answers: string[];
 }): Promise<{ report: QuizReport; recordId: string }> {
-  return call("quizScore", payload);
+  return call("quizScore", payload, { timeoutMs: CALL_TIMEOUT_LLM_MS });
 }

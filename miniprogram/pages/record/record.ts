@@ -1,6 +1,6 @@
 // 录音作答页（FR-04/05/06）：录音 → 上传 → ASR → （人工修正）→ 评估 → 报告
 import { getRecorder, Recorder, StopPayload } from "../../utils/recorder";
-import { submitPractice, requestSubscribe, call, showCallError, errorText } from "../../utils/api";
+import { submitPractice, requestSubscribe, call, showCallError, errorText, CALL_TIMEOUT_LLM_MS, type CallOptions } from "../../utils/api";
 import { checkRecordAuth, describeRecorderError, openRecordSetting } from "../../utils/privacy";
 
 /**
@@ -14,9 +14,9 @@ import { checkRecordAuth, describeRecorderError, openRecordSetting } from "../..
  *    原先这里裸调 wx.cloud.callFunction，云函数未部署 / 环境未关联 /
  *    网络挂起时 Promise 永不 settle → 页面永久停在「上传录音中…」。
  */
-async function callChecked(name: string, data: Record<string, any> = {}): Promise<any> {
+async function callChecked(name: string, data: Record<string, any> = {}, opts: CallOptions = {}): Promise<any> {
   // call() 内部已校验 result 非空并抛出「服务无响应」，此处只需处理业务 error
-  const res = await call<any>(name, data);
+  const res = await call<any>(name, data, opts);
   if (res && res.error) {
     throw new Error(String(res.error));
   }
@@ -521,7 +521,8 @@ Page({
       // 修复：原先用 callFn，未检查 { error } 返回 →
       // 评估失败（未登录 / 配额超限 / 无权限）也会跳转结果页，
       // 用户看到空白报告页且不知原因。改用 callChecked 抛出真实错误。
-      await callChecked("analyze", { recordId });
+      // analyze 走真实 LLM 评估（20~40s），必须用 60s 超时，否则 20s 即「网络超时」
+      await callChecked("analyze", { recordId }, { timeoutMs: CALL_TIMEOUT_LLM_MS });
       // 订阅消息是**非阻塞的增强功能**：报告此刻已生成完毕，推送失败不影响用户。
       // 用 quiet 模式 → 失败只 warn，不在 Console 打红色 error（避免被误读为功能失败）。
       // 云函数侧也已把「用户拒绝授权」识别为正常分支并返回 ok:true。

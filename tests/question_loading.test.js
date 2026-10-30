@@ -170,20 +170,25 @@ function instantiate(source, opts) {
 
 /** 构造一份「有缺陷的源码」：模拟本轮回归（成功分支 + finally 都不归位 loading） */
 function legacySource() {
-  const src = fs.readFileSync(SRC, "utf8");
-  const patched = src
-    .replace(
-      "this.setData({ question: questions[0].text, loadFailed: false, loading: false });",
-      "this.setData({ question: questions[0].text, loadFailed: false });"
-    )
-    .replace(
-      "      if (this.alive && this.data.loading) {\n" +
-        "        this.setData({ loading: false });\n" +
-        "      }",
-      ""
-    );
-  if (patched === src) {
-    throw new Error("未能构造缺陷源码：question.ts 结构已变，请同步更新本测试");
+  // ★行尾归一化（2026-10-30 修复）：question.ts 实际是 CRLF，这里用 \n 精确
+  //   匹配会静默失配（String.replace 找不到就不动、不报错）→ 哨兵放行"带看门狗
+  //   兜底的缺陷版"，自检必失败。先归一化再替换，并对**每一处**替换断言生效。
+  const src = fs.readFileSync(SRC, "utf8").replace(/\r\n/g, "\n");
+  const step1 = src.replace(
+    "this.setData({ question: questions[0].text, loadFailed: false, loading: false });",
+    "this.setData({ question: questions[0].text, loadFailed: false });"
+  );
+  if (step1 === src) {
+    throw new Error("未能构造缺陷源码（第 1 处：正常路径的 loading 归位）：question.ts 结构已变，请同步更新本测试");
+  }
+  const patched = step1.replace(
+    "      if (this.alive && this.data.loading) {\n" +
+      "        this.setData({ loading: false });\n" +
+      "      }",
+    ""
+  );
+  if (patched === step1) {
+    throw new Error("未能构造缺陷源码（第 2 处：finally 看门狗兜底）：question.ts 结构已变，请同步更新本测试");
   }
   return patched;
 }

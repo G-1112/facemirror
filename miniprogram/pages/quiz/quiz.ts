@@ -2,7 +2,7 @@
 // 状态机：loading → ready → submitting → (成功跳结果页 | 提交失败回 ready)
 import type { IAppOption } from "../../app";
 import { quizDraw, quizScore, showCallError, errorText } from "../../utils/api";
-import { MAX_QUIZ_ANSWER_LEN, clampAnswer } from "../../utils/quiz";
+import { MAX_QUIZ_ANSWER_LEN, clampAnswer, isValidSubjectSelection } from "../../utils/quiz";
 import type { QuizQuestion } from "../../utils/quiz";
 import { createNavGuard, NavGuard } from "../../utils/nav-guard";
 
@@ -21,6 +21,8 @@ Page({
     loading: false,
     loadFailed: false,
     errorMsg: "",
+    // true = 页面参数无效（未带 cats 直接进入），「重新抽题」无意义，引导回设置页
+    invalidParams: false,
     // 科目标签（设置页带过来，展示用）
     catsLabel: "",
     // 题目 + 答案（下标一一对应）
@@ -41,11 +43,34 @@ Page({
     this.alive = true;
     this._guard = createNavGuard({});
     // 解析参数：cats=逗号分隔科目；n=题量（10~15，非法回退 12）
-    const cats = (query.cats || "").split(",").map((s) => s.trim()).filter(Boolean);
+    // ⚠️ 框架对 onLoad query 不保证自动解码（官方规范：发送端 encodeURIComponent、
+    // 接收端自行解码，开发者工具与真机行为不一致）。设置页传的是
+    // encodeURIComponent("工学,管理学")，这里必须先解码再切分——否则整串
+    // %E5%B7%A5%E5%AD%A6%2C... 切不出科目，全部被白名单拦下。
+    let rawCats = query.cats || "";
+    if (rawCats.indexOf("%") >= 0) {
+      try {
+        rawCats = decodeURIComponent(rawCats);
+      } catch (e) {
+        // 非法编码序列：保留原样，交给白名单校验拦下
+      }
+    }
+    const cats = rawCats.split(",").map((s) => s.trim()).filter(Boolean);
     const nRaw = Number(query.n);
     const n = isFinite(nRaw) ? Math.max(10, Math.min(15, Math.round(nRaw))) : 12;
     this._params = { cats, n };
     this.setData({ catsLabel: cats.join(" · ") });
+    // ── 业务前置拦截（铁律 #6）：参数无效时本地给出可操作提示，不发起注定失败的
+    // 云调用。编译模式不带参数直开本页、或参数解码后不在学科白名单内，都会命中这里。
+    if (!isValidSubjectSelection(cats)) {
+      this.setData({
+        loading: false,
+        loadFailed: true,
+        invalidParams: true,
+        errorMsg: "未收到有效科目，请从「题库抽题」设置页选择科目后进入",
+      });
+      return;
+    }
     this.load();
   },
 
@@ -64,6 +89,16 @@ Page({
 
   async load() {
     if (this.data.loading) return;
+    // 双保险：onRetry 也不允许在参数无效时发起云调用（防重复报错刷屏）
+    if (!isValidSubjectSelection(this._params.cats)) {
+      this.setData({
+        loading: false,
+        loadFailed: true,
+        invalidParams: true,
+        errorMsg: "未收到有效科目，请从「题库抽题」设置页选择科目后进入",
+      });
+      return;
+    }
     this.setData({ loading: true, loadFailed: false, errorMsg: "" });
     // 看门狗：25s（> api.ts 20s 超时）强制归位，防永久「抽题中」
     this.clearLoadWatchdog();
@@ -115,6 +150,15 @@ Page({
 
   onRetry() {
     this.load();
+  },
+
+  /** 参数无效时的引导出口：优先返回设置页；直接编译进入时页面栈为空 → redirectTo 兜底 */
+  onBackToSetup() {
+    wx.navigateBack({
+      fail: () => {
+        wx.redirectTo({ url: "/pages/quiz-setup/quiz-setup" });
+      },
+    });
   },
 
   /** 单题答案输入（data-index 定位） */

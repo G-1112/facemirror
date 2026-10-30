@@ -16,6 +16,7 @@ const { escapeForPrompt, scanInjection } = require("./injection");
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 const db = cloud.database();
+const _ = db.command;
 
 const COL = "interviews";
 const MAX_QUESTIONS = 20;
@@ -54,7 +55,20 @@ function describeDbError(err, fallback) {
     return "数据库权限校验失败，请检查 interviews 集合的权限设置";
   }
   console.error("[deepSession] 数据库异常 code=" + (code || "?"), err && (err.errMsg || err.message));
-  return fallback;
+  // ★兜底文案必须携带真实错误码（2026-10-29 联调实测教训）：
+  //   update 保存失败时错误码既不是 -502005 也不是 -502003，用户侧只看到
+  //   「保存失败，请重试」→ 无法定位、反复空重试。错误码随文案直达前端
+  //   （describeCallError 会原样透传），云函数日志里另有完整 errMsg。
+  //   20:31 实测 -502001 是「数据库请求失败」通用包装码，真实原因在底层
+  //   errMsg（如 document.update:fail [FailedOperation] ...）→ 一并透传，
+  //   用户弹窗即可看到根因，无需再翻云函数日志。
+  const detail = String((err && (err.errMsg || err.message)) || "").replace(/\s+/g, " ").trim().slice(0, 120);
+  return (
+    fallback +
+    "（数据库错误码 " + (code || "未知") +
+    (detail ? "：" + detail : "") +
+    "）"
+  );
 }
 
 const SCORE_SYSTEM = `你是严格的技术面试官，正在评估候选人对一道面试题的回答。
@@ -129,9 +143,15 @@ exports.main = async (event) => {
     const doc = loaded.doc;
 
     const patch = { updatedAt: now };
-    if (event.resume !== undefined) patch.resume = event.resume;
-    if (event.job !== undefined) patch.job = event.job;
-    if (event.competency !== undefined) patch.competency = event.competency;
+    // ★对象字段必须用 _.set 整体覆盖（2026-10-30 联调实测 -502001 根因）：
+    //   create 把 resume/job/competency 初始化为 null，而云开发 doc.update 是
+    //   深度合并语义——嵌套对象会被展开成点路径（resume.summary 等）逐个 $set。
+    //   MongoDB 撞上父字段为 null 时抛
+    //   「Cannot create field 'xxx' in element {resume: null}」→ multiple write
+    //   errors → -502001。_.set 指令 = 整体替换该字段，不做点路径展开，绕开此坑。
+    if (event.resume !== undefined) patch.resume = _.set(event.resume);
+    if (event.job !== undefined) patch.job = _.set(event.job);
+    if (event.competency !== undefined) patch.competency = _.set(event.competency);
     if (Array.isArray(event.questions)) {
       patch.questions = event.questions.slice(0, MAX_QUESTIONS);
       patch.status = event.questions.length > 0 ? "questions_ready" : doc.status;

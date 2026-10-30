@@ -370,6 +370,19 @@ Page({
   },
 
   // ------------------------------------------------------------ 岗位
+  /** 步骤②主按钮：纯切换到岗位填写视图（不发起云调用）。
+   *  修复记录（2026-10-27）：此前该按钮误绑 onAnalyzeJob，而「岗位名称」输入框
+   *  只在岗位分析成功后的视图中才渲染 → 首次点击 role 必为空 → 必然被
+   *  「请填写目标岗位名称」拦截，流程死路。现拆为两段：先切视图填表单，
+   *  再由表单下方的「开始岗位分析」按钮触发 onAnalyzeJob。 */
+  onToJobStep() {
+    if (!this.data.resume) {
+      wx.showToast({ title: "请先上传并解析简历", icon: "none" });
+      return;
+    }
+    this.setData({ step: "job", errorMsg: "", loadFailed: false });
+  },
+
   onJobInput(e: WechatMiniprogram.Input) {
     const key = e.currentTarget.dataset.key as string;
     this.setData({ [`jobView.${key}`]: e.detail.value } as any);
