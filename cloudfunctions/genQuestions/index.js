@@ -35,6 +35,13 @@ async function extractPdfText(buf) {
   if (text.replace(/\s+/g, "").length < 30) {
     throw new Error("PDF 可能是扫描件或图片版，无法提取文字，请改用 docx / txt 格式重新上传");
   }
+  // ⚠️ 嵌入字体子集缺 ToUnicode CMap 的 PDF：数字等字形全部映射为 U+0000
+  // （2026-11-16 实测：简历「IoU ≥ 0.91」被提为「IoU ≥ \u0000.\u0000\u0000」，
+  // 出题依据会写「≥ 0.00」——绝不静默产出错题，检测到 NUL 即 fail-fast）
+  const nulCount = (text.match(/\u0000/g) || []).length;
+  if (nulCount > 0) {
+    throw new Error("该 PDF 的内嵌字体缺少文字编码表，数字等字符无法正确提取。请用 Word/WPS 打开原文档另存为 docx 格式上传，或重新导出 PDF");
+  }
   return text;
 }
 

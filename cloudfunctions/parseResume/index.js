@@ -44,6 +44,13 @@ async function extractPdfText(buf) {
   if (text.replace(/\s+/g, "").length < 30) {
     throw new Error("PDF 可能是扫描件或图片版，无法提取文字，请改用 docx / txt 格式重新上传");
   }
+  // ⚠️ 嵌入字体子集缺 ToUnicode CMap 的 PDF：数字等字形全部映射为 U+0000
+  // （2026-11-16 实测：简历「IoU ≥ 0.91」被提为「IoU ≥ \u0000.\u0000\u0000」，
+  // LLM 据此出题依据写「≥ 0.00」——绝不静默产出错题，检测到 NUL 即 fail-fast）
+  const nulCount = (text.match(/\u0000/g) || []).length;
+  if (nulCount > 0) {
+    throw new Error("该 PDF 的内嵌字体缺少文字编码表，数字等字符无法正确提取。请用 Word/WPS 打开原文档另存为 docx 格式上传，或重新导出 PDF");
+  }
   return text;
 }
 
@@ -295,9 +302,9 @@ exports.main = async (event) => {
     text = await extractText(fileID);
   } catch (e) {
     console.warn("简历文本提取失败:", e.message);
-    // 透传可操作的原始原因（扫描件指引 / PDF 组件未安装），未知异常才用兜底文案
+    // 透传可操作的原始原因（扫描件指引 / 内嵌字体缺编码表 / PDF 组件未安装），未知异常才用兜底文案
     const msg = (e && e.message) || "";
-    if (msg.includes("扫描件") || msg.includes("组件未安装")) {
+    if (msg.includes("扫描件") || msg.includes("文字编码表") || msg.includes("组件未安装")) {
       return { error: `简历解析失败：${msg}` };
     }
     // 区分「文件坏了」和「格式不对」，让用户知道该换文件还是改格式

@@ -538,6 +538,21 @@ async function testCloud() {
     const scanned = await main({ fileID: pdfId });
     check("扫描件 PDF 明确报错并给指引", !!scanned.error && scanned.error.includes("扫描件"), JSON.stringify(scanned));
 
+    // NUL PDF（2026-11-16 真机实测）：嵌入字体子集缺 ToUnicode CMap → 数字字形全部
+    // 映射为 \u0000（「IoU ≥ 0.91」被提为「IoU ≥ \u0000.\u0000\u0000」→ 出题依据写「≥ 0.00」）
+    // → 必须 fail-fast 报错指引换 docx，绝不静默产出错题
+    // （先重置频控：parseResume 限 6 次/小时，本场景前面用例已用满额度）
+    state.store.rate_limits = [];
+    state.modules["pdf-parse"] = async () => ({
+      text: "测试集 IoU ≥ \u0000.\u0000\u0000、F\u0000-score ≥ \u0000.\u0000\u0000，项目经历与技能描述若干文字用于补足最短文本长度检查要求",
+    });
+    const nulPdf = await main({ fileID: pdfId });
+    check(
+      "NUL PDF（缺编码表）明确报错并指引换 docx",
+      !!nulPdf.error && nulPdf.error.includes("文字编码表"),
+      JSON.stringify(nulPdf)
+    );
+
     // pdf-parse 抛异常 → 归入解析失败（带原始原因）
     state.modules["pdf-parse"] = async () => {
       throw new Error("bad pdf structure");
