@@ -2,7 +2,7 @@
 // 状态机：loading → ready → submitting → (成功跳结果页 | 提交失败回 ready)
 import type { IAppOption } from "../../app";
 import { quizDraw, quizScore, showCallError, errorText } from "../../utils/api";
-import { MAX_QUIZ_ANSWER_LEN, clampAnswer, isValidSubjectSelection } from "../../utils/quiz";
+import { MAX_QUIZ_ANSWER_LEN, clampAnswer, isValidSubjectSelection, isValidDifficulty, QUIZ_DEFAULT_DIFFICULTY } from "../../utils/quiz";
 import type { QuizQuestion } from "../../utils/quiz";
 import { createNavGuard, NavGuard } from "../../utils/nav-guard";
 
@@ -37,7 +37,7 @@ Page({
   alive: true,
   loadWatchdog: null as number | null,
   _guard: null as NavGuard | null,
-  _params: { cats: [] as string[], n: 12 },
+  _params: { cats: [] as string[], n: 12, difficulty: "全部" as string },
 
   onLoad(query: Record<string, string>) {
     this.alive = true;
@@ -58,8 +58,21 @@ Page({
     const cats = rawCats.split(",").map((s) => s.trim()).filter(Boolean);
     const nRaw = Number(query.n);
     const n = isFinite(nRaw) ? Math.max(10, Math.min(15, Math.round(nRaw))) : 12;
-    this._params = { cats, n };
-    this.setData({ catsLabel: cats.join(" · ") });
+    // 难度（2026-11-16 新增）：同样注意 onLoad query 不保证自动解码
+    let rawDiff = query.diff || "";
+    if (rawDiff.indexOf("%") >= 0) {
+      try {
+        rawDiff = decodeURIComponent(rawDiff);
+      } catch (e) {
+        // 非法编码序列：保留原样，交给白名单校验回退「全部」
+      }
+    }
+    const difficulty = isValidDifficulty(rawDiff) ? rawDiff : QUIZ_DEFAULT_DIFFICULTY;
+    this._params = { cats, n, difficulty };
+    // 展示标签：难度非「全部」时拼在科目后（loading 与进度条文案共用）
+    this.setData({
+      catsLabel: cats.join(" · ") + (difficulty !== "全部" ? ` · ${difficulty}` : ""),
+    });
     // ── 业务前置拦截（铁律 #6）：参数无效时本地给出可操作提示，不发起注定失败的
     // 云调用。编译模式不带参数直开本页、或参数解码后不在学科白名单内，都会命中这里。
     if (!isValidSubjectSelection(cats)) {
@@ -117,7 +130,11 @@ Page({
           console.warn("登录失败，继续尝试抽题:", loginErr);
         }
       }
-      const res = await quizDraw({ categories: this._params.cats, count: this._params.n });
+      const res = await quizDraw({
+        categories: this._params.cats,
+        count: this._params.n,
+        difficulty: this._params.difficulty,
+      });
       if (!this.alive) return;
       const list: QuizItem[] = (res.questions || []).map((q, i) => ({
         ...q,

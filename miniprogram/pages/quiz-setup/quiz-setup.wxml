@@ -32,6 +32,18 @@
     >{{item}} 题</view>
   </view>
 
+  <!-- 难度档位（复用 count-row/count-chip 样式；类名纯 ASCII，中文只出现在文本内容里） -->
+  <view class="section-title">题目难度</view>
+  <view class="count-row">
+    <view
+      wx:for="{{difficultyOptions}}"
+      wx:key="*this"
+      class="count-chip {{difficulty === item ? 'checked' : ''}}"
+      data-diff="{{item}}"
+      bindtap="onPickDifficulty"
+    >{{item}}</view>
+  </view>
+
   <!--
     ⚠️ 刻意不用 disabled 做防重入（首页事故同款）：
     未选科目时点「开始抽题」→ JS 拦截 + toast 指引，按钮永远可点。

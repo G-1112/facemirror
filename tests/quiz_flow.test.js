@@ -234,6 +234,59 @@ async function testA1() {
     // 三科每科都出现
     const threeCats = new Set(over.questions.map((q) => q.category));
     check("多选科目全部出现", threeCats.size === 3, JSON.stringify([...threeCats]));
+
+    // ── 难度选择（2026-11-16 新增）──
+    // seedBank 每科 30 题：困难 10（i%3==0）/ 中等 10 / 简单 10
+    const hard = await main({ categories: ["哲学", "法学"], count: 12, difficulty: "困难" });
+    check(
+      "难度=困难 只返回困难题",
+      !hard.error && hard.questions.length === 12 && hard.questions.every((q) => q.difficulty === "困难"),
+      JSON.stringify(hard.questions && hard.questions.map((q) => q.difficulty))
+    );
+    check("返回值回显 difficulty", hard.difficulty === "困难", JSON.stringify(hard.difficulty));
+
+    const easy = await main({ categories: ["法学"], count: 10, difficulty: "简单" });
+    check(
+      "难度=简单 只返回简单题",
+      !easy.error && easy.questions.length === 10 && easy.questions.every((q) => q.difficulty === "简单"),
+      JSON.stringify(easy.questions && easy.questions.map((q) => q.difficulty))
+    );
+
+    const invalid = await main({ categories: ["哲学"], count: 10, difficulty: "超难" });
+    check(
+      "白名单外难度回退「全部」（不过滤）",
+      !invalid.error && invalid.difficulty === "全部" && invalid.questions.length === 10,
+      JSON.stringify(invalid.difficulty)
+    );
+
+    // 单科困难池只有 10 题 → 请求 15 自动降级到实际可用数（不报错）
+    const degrade = await main({ categories: ["哲学"], count: 15, difficulty: "困难" });
+    check(
+      "难度池不足时降级到实际可用数",
+      !degrade.error && degrade.questions.length === 10 && degrade.questions.every((q) => q.difficulty === "困难"),
+      String(degrade.questions && degrade.questions.length)
+    );
+  }
+  {
+    // 难度过细 → 池为空 → 可操作报错（提示改回「全部」）
+    const { main, state } = loadFunction("quizDraw", { OPENID: "o_q" });
+    seedBank(state.store, 30);
+    // 构造空池：清掉哲学/法学的全部题目，只放回困难题
+    state.store.questions = state.store.questions.filter((q) => q.category !== "哲学" && q.category !== "法学");
+    ["哲学", "法学"].forEach((cat, ci) => {
+      for (let i = 1; i <= 5; i++) {
+        state.store.questions.push({
+          _id: `h_${ci}_${i}`, scene: "interview", category: cat,
+          text: `${cat}困难题${i}`, difficulty: "困难",
+        });
+      }
+    });
+    const empty = await main({ categories: ["哲学", "法学"], difficulty: "简单", count: 10 });
+    check(
+      "难度过滤后池为空 → 报错并提示改回「全部」",
+      !!empty.error && empty.error.includes("全部"),
+      JSON.stringify(empty).slice(0, 140)
+    );
   }
   {
     // 题库为空（旧库只有 通用/技术）→ 明确报错指引重导入

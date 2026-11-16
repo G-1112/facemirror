@@ -31,6 +31,16 @@ export const QUIZ_DEFAULT_COUNT = 12;
 export const QUIZ_MIN_COUNT = 10;
 export const QUIZ_MAX_COUNT = 15;
 
+/** 难度档位（2026-11-16 新增）：与题库 difficulty 字段、quizDraw 白名单同一口径 */
+export const QUIZ_DIFFICULTIES = ["全部", "简单", "中等", "困难"] as const;
+export type QuizDifficulty = (typeof QUIZ_DIFFICULTIES)[number];
+export const QUIZ_DEFAULT_DIFFICULTY: QuizDifficulty = "全部";
+
+/** 校验难度选择（白名单外一律回退「全部」） */
+export function isValidDifficulty(d: string): d is QuizDifficulty {
+  return (QUIZ_DIFFICULTIES as readonly string[]).indexOf(d) >= 0;
+}
+
 /** 单题答案长度上限（与 submitPractice 的 questionText 上限同口径） */
 export const MAX_QUIZ_ANSWER_LEN = 2000;
 

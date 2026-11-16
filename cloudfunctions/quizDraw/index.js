@@ -21,6 +21,10 @@ const MAX_COUNT = 15;
 const DEFAULT_COUNT = 12;
 const MAX_QUESTION_LEN = 2000;
 
+// 难度白名单（2026-11-16 新增难度选择）：与题库 difficulty 字段口径一致。
+// 「全部」= 不过滤；白名单外的值一律回退「全部」，防止借接口探测任意值。
+const DIFFICULTIES = ["全部", "简单", "中等", "困难"];
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext();
   if (!OPENID) return { error: "未获取用户身份，请重新进入小程序" };
@@ -33,12 +37,14 @@ exports.main = async (event) => {
   }
   let count = Math.round(Number(event.count) || DEFAULT_COUNT);
   count = Math.max(MIN_COUNT, Math.min(MAX_COUNT, count));
+  const difficulty = DIFFICULTIES.includes(event.difficulty) ? event.difficulty : "全部";
 
-  // ── 各科目题量统计 ──
+  // ── 各科目题量统计（按难度过滤后的口径）──
   const perCat = [];
   let totalAvailable = 0;
   for (const cat of categories) {
     const where = { scene: "interview", category: cat };
+    if (difficulty !== "全部") where.difficulty = difficulty;
     const res = await db.collection("questions").where(where).count();
     const n = res.total || 0;
     perCat.push({ cat, n });
@@ -47,12 +53,12 @@ exports.main = async (event) => {
   if (totalAvailable === 0) {
     return {
       error:
-        "所选科目在内置题库中没有题目。请先在云开发控制台删除 questions 集合旧数据并重新导入 questions.import.json（1382 条）",
+        "所选科目在题库中没有符合条件的题目。若筛选了难度可改回「全部」；否则请先在云开发控制台删除 questions 集合旧数据并重新导入 questions.import.json（1382 条）",
     };
   }
   if (totalAvailable < MIN_COUNT) {
     return {
-      error: `所选科目题量共 ${totalAvailable} 题，不足 ${MIN_COUNT} 题，请多选几个科目或先补全题库`,
+      error: `所选范围题量共 ${totalAvailable} 题，不足 ${MIN_COUNT} 题。请多选几个科目、或把难度改回「全部」后重试`,
     };
   }
 
@@ -93,9 +99,11 @@ exports.main = async (event) => {
     // 随机起点落在 [0, n - take]：与 getQuestions 相同的等概率修正
     const maxStart = Math.max(0, n - take);
     const skip = Math.floor(Math.random() * (maxStart + 1));
+    const where = { scene: "interview", category: cat };
+    if (difficulty !== "全部") where.difficulty = difficulty;
     const res = await db
       .collection("questions")
-      .where({ scene: "interview", category: cat })
+      .where(where)
       .skip(skip)
       .limit(take)
       .get();
@@ -118,6 +126,7 @@ exports.main = async (event) => {
     questions: questions.filter((q) => q.text),
     totalAvailable,
     categories,
+    difficulty,
     count,
   };
 };

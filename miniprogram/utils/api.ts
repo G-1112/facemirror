@@ -546,11 +546,16 @@ export function deepAnalyze(interviewId: string): Promise<{ report: DeepReport }
 
 // ---- 题库抽题（批量模式）接口 ----
 
-/** 按所选科目（多选）随机抽 10~15 题，一次性返回 */
-export function quizDraw(payload: { categories: string[]; count?: number }): Promise<{
+/** 按所选科目（多选）与难度随机抽 10~15 题，一次性返回 */
+export function quizDraw(payload: {
+  categories: string[];
+  count?: number;
+  difficulty?: string; // 全部/简单/中等/困难，白名单外服务端回退「全部」
+}): Promise<{
   questions: QuizQuestion[];
   totalAvailable: number;
   categories: string[];
+  difficulty: string;
   count: number;
 }> {
   return call("quizDraw", payload);
