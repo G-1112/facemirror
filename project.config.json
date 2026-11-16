@@ -39,7 +39,12 @@
   },
   "packOptions": {
     "ignore": [],
-    "include": []
+    "include": [
+      {
+        "type": "folder",
+        "value": "miniprogram/skills"
+      }
+    ]
   },
   "simulatorPluginLibVersion": {}
 }

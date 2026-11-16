@@ -59,7 +59,7 @@ facemirror/
 
 ### 1.5 本地类型检查（可选）
 
-仓库已提交 `package-lock.json`（根目录 + 17 个云函数各一份），
+仓库已提交 `package-lock.json`（根目录 + 18 个云函数各一份），
 用 `npm ci` 可**严格按锁文件**安装，保证与作者环境一致：
 
 ```bash
@@ -153,7 +153,7 @@ python scripts/verify_cloud_deploy.py    # ★部署验证：download 云端代�
 > `-604101` = 无权限调用此 API，需给云函数配置云调用权限 · `-604102` = 调用超时。
 >
 > ⚠️ **别再把 `-504002` 当成"云函数未部署"**。2026-10-26 用开发者工具 CLI 实测：
-> 本项目 **17 个云函数全部已部署且状态 `Active`**（`updateTranscript` timeout 20 / `analyze` / `quizScore` timeout 60 /
+> 本项目 **18 个云函数全部已部署且状态 `Active`**（`updateTranscript` / `getWxacode` timeout 20 / `analyze` / `quizScore` / `analyzeJob` / `parseResume` / `genQuestions` / `genDeepQuestions` / `deepSession` / `deepAnalyze` timeout 60 /
 > runtime Nodejs16.13，依赖 `wx-server-sdk ~2.6.3` 完整）。
 > 所以 `-504002` 一律按「**云函数内部抛了异常**」处理 —— 去 `message:` 字段和云函数日志里找真因。
 >
