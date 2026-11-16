@@ -9,9 +9,12 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 /**
  * scene 仅允许官方字符集（数字/英文与 !#$&'()*+,/:;=?@-._~），且 ≤32 字符。
  * recordId（数据库 _id，字母数字）与时间戳均在白名单内；其余字符剔除防止调用报错。
+ * ⚠️ 字符类里的连字符必须放末尾：写成 `@-._` 会被解析为 `@` 到 `.` 的范围（64>46
+ *    倒序）→ "Range out of order in character class"，正则编译失败，函数必崩
+ *    （2026-11-16 云端 invoke 实测抓出；前端静默降级掩盖了该故障）。
  */
 function sanitizeScene(raw) {
-  const s = String(raw == null ? "" : raw).replace(/[^0-9a-zA-Z!#$&'()*+,/:;=?@-._~]/g, "");
+  const s = String(raw == null ? "" : raw).replace(/[^0-9a-zA-Z!#$&'()*+,/:;=?@._~-]/g, "");
   return s.slice(0, 32);
 }
 
