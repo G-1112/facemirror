@@ -293,8 +293,18 @@ export function showCallError(e: any, fallback = "操作失败") {
   wx.showToast({ title: toastTitle, icon: "none" });
 
   const truncated = full.length > TOAST_MAX;
-  if (info.hint || truncated) {
-    const content = truncated ? "完整原因：" + full + (info.hint ? "\n\n" + info.hint : "") : (info.hint as string);
+  // 2026-11-16 真机实测修复：业务错误超长分支的 hint =「完整原因：+ 同一段全文」，
+  // 此前又拼一遍「完整原因：+ 40 字截断文」→ modal 里同一段原因重复出现两次
+  // （NUL PDF 报错弹窗截图实锤）。hint 与 full 同源时直接用 hint 去重；
+  // 其他 hint（如 -504002 的「原始原因+部署指引」）与 full 互补，保留原拼接结构。
+  const hint = info.hint as string | undefined;
+  const hintSameSource = !!hint && (hint.startsWith("完整原因：") || hint.includes(full));
+  const content = hintSameSource
+    ? (hint as string)
+    : truncated
+      ? "完整原因：" + full + (hint ? "\n\n" + hint : "")
+      : hint || "";
+  if (content) {
     setTimeout(() => {
       wx.showModal({
         title: "需要处理",

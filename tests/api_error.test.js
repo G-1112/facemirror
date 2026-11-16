@@ -298,11 +298,42 @@ async function main() {
     check("modal 含完整原文", c.includes("内容安全检测暂不可用"), c);
     check("modal 含括号里的底层原因", c.includes("ACCESS_DENIED"), c);
     check("modal 含 msgSecCheck 指引", c.includes("msgSecCheck"), c);
+    // 2026-11-16 真机实测修复：同一段原因不得在 modal 里重复出现两次
+    // （此前 hint 已带「完整原因：+全文」，又拼了一遍「完整原因：+40字截断文」）
+    const occurrences = c.split("完整原因").length - 1;
+    check("「完整原因」只出现一次", occurrences === 1, c);
+  }
+
+  {
+    // 6g. ★页面级长业务错误（2026-11-16 真机实测 NUL PDF 弹窗重复实锤）：
+    //     页面把云函数返回的 {error:"简历解析失败：...全文"} 包成 Error 传进
+    //     showCallError → describeCallError 走「业务错误超长」分支，
+    //     hint =「完整原因：+ 同一段全文」；旧代码又拼一遍「完整原因：+ 40 字截断文」
+    //     → modal 里同一段原因重复出现两次。
+    const toastCalls = [];
+    const modalCalls = [];
+    const api = loadApi({
+      showToast: (o) => toastCalls.push(o),
+      showModal: (o) => modalCalls.push(o),
+      setTimeout: setTimeout,
+    });
+    const fullMsg =
+      "简历解析失败：该 PDF 的内嵌字体缺少文字编码表，数字等字符无法正确提取。" +
+      "请用 Word/WPS 打开原文档另存为 docx 格式上传，或重新导出 PDF";
+    api.showCallError(new Error(fullMsg));
+    await new Promise((r) => setTimeout(r, 1900));
+    check("页面级长错误弹了 modal", modalCalls.length === 1, JSON.stringify(modalCalls));
+    const c = modalCalls[0] ? modalCalls[0].content : "";
+    check("modal 含完整报错全文", c.includes("重新导出 PDF"), c);
+    const occ = c.split("完整原因").length - 1;
+    check("「完整原因」只出现一次（修复重复拼接）", occ === 1, c);
+    const occMsg = c.split("简历解析失败").length - 1;
+    check("报错正文不重复出现", occMsg === 1, c);
   }
 
   console.log("\n" + "=".repeat(52));
   if (failed === 0) {
-    console.log("全部通过：7 个场景均符合预期");
+    console.log("全部通过：8 个场景均符合预期");
   } else {
     console.log("失败 " + failed + " 项");
   }
