@@ -239,8 +239,8 @@ export function describeCallError(err: any): { text: string; raw: string; hint?:
     return {
       text: "云函数调用超时，请稍后重试",
       hint:
-        "若云函数需要调用大模型或语音识别，请在云开发控制台把该函数的超时时间改为 60 秒" +
-        "（config.json 无法设置超时）。",
+        "若仍超时，请确认该函数已按 config.json 重新部署：config.json 的 timeout 可设置云函数" +
+        "运行时上限，analyze / deepAnalyze / deepSession 已统一配置为 60 秒。",
       raw,
     };
   }

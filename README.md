@@ -23,10 +23,12 @@ facemirror/
 │   ├── utils/               # api.ts / expression.ts / recorder.ts / config.ts
 │   │                        # + interview.ts（深度面试共享类型与常量）
 │   └── app.ts / app.json
-├── cloudfunctions/          # 云函数（Node.js，15 个）
+├── cloudfunctions/          # 云函数（Node.js，18 个）
 │   ├── login / submitPractice / asr / analyze / finalize
 │   ├── genQuestions / getPractice / getQuestions / getHistory / updateTranscript
-│   └── parseResume / analyzeJob / genDeepQuestions / deepSession / deepAnalyze  # 深度面试
+│   ├── parseResume / analyzeJob / genDeepQuestions / deepSession / deepAnalyze  # 深度面试
+│   ├── quizDraw / quizScore  # 刷题抽题与判分
+│   └── getWxacode  # 分享海报小程序码（FR-11，wxacode.getUnlimited）
 ├── data/questions/          # 1382 题题库（原 80 + 13 学科 ×100+）
 ├── docs/                    # 作品说明文档（7 项）/ prompt-log / 小程序AI技能接入指南
 ├── scripts/                 # deploy_cloud.py / verify_cloud_deploy.py

@@ -249,6 +249,11 @@ Page({
           wx.showToast({ title: "未选择到文件", icon: "none" });
           return;
         }
+        // 上限校验：超 5MB 直接拦截，不发上传（云存储按流量计费，且解析端无需超大文件）
+        if (file.size > 5 * 1024 * 1024) {
+          wx.showToast({ title: "文件不能超过 5MB", icon: "none" });
+          return;
+        }
         this.uploadAndParse(file);
       },
       fail: (err: any) => {

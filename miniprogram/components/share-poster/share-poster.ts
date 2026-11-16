@@ -1,7 +1,9 @@
 // 分享海报组件（FR-11）：Canvas 绘制雷达 + 总分 + 文案，可保存相册
-// 小程序码需通过服务端 wxacode.getUnlimited 生成后贴入（见 README）
+// 小程序码由 getWxacode 云函数（wxacode.getUnlimited）生成后贴到右下角；
+// 取码失败（如小程序未发布）时静默降级为无码海报，不阻塞保存。
 
 import { createNavGuard, NavGuard } from "../../utils/nav-guard";
+import { call } from "../../utils/api";
 
 /** 取设备像素比。
  *  wx.getSystemInfoSync 自基础库 2.20.1 起停止维护 → 改用 wx.getWindowInfo()。
@@ -30,6 +32,8 @@ Component({
     score: { type: Number, value: 0 },
     radar: { type: Array, value: [3, 3, 3, 3, 3] },
     labels: { type: Array, value: ["内容", "结构", "表达", "节奏", "专业度"] },
+    // 小程序码 scene 来源（FR-11）：传 recordId 可溯源；空则云函数退化为时间戳
+    recordId: { type: String, value: "" },
   },
 
   data: {
@@ -77,7 +81,9 @@ Component({
         // 必须显式重置后再 scale，避免多次保存时缩放叠加。
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(dpr, dpr);
-        this.drawPoster(ctx, width, height);
+        // 小程序码（FR-11）：绘制前尝试取码，任何失败都静默降级为无码海报
+        const qrImg = await this.loadQrImage(node);
+        this.drawPoster(ctx, width, height, qrImg);
 
         // 延迟确保绘制完成
         setTimeout(() => {
@@ -144,7 +150,32 @@ Component({
       });
     },
 
-    drawPoster(ctx: any, w: number, h: number) {
+    /** 尝试取小程序码（FR-11）：getWxacode 云函数 → 云存储下载 → Canvas 2D 图片对象。
+     *  任何一步失败（小程序未发布 / 网络异常等）都返回 null，海报降级为无码。 */
+    async loadQrImage(canvasNode: any): Promise<any | null> {
+      try {
+        const r = await call<{ ok: boolean; fileID?: string }>(
+          "getWxacode",
+          { scene: this.data.recordId || String(Date.now()) },
+          { quiet: true }
+        );
+        if (!r || !r.ok || !r.fileID) return null;
+        const dl = await wx.cloud.downloadFile({ fileID: r.fileID });
+        if (!dl.tempFilePath) return null;
+        // Canvas 2D 必须用 node.createImage() 并等待加载完成，否则 drawImage 画不出内容
+        const img = canvasNode.createImage();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error("qr image load failed"));
+          img.src = dl.tempFilePath;
+        });
+        return img;
+      } catch (_) {
+        return null;
+      }
+    },
+
+    drawPoster(ctx: any, w: number, h: number, qrImg?: any) {
       const { score, radar, labels } = this.data;
       // 背景
       ctx.fillStyle = "#ffffff";
@@ -225,7 +256,27 @@ Component({
         ctx.fillText(names[i], p.x, p.y);
       }
 
-      // 底部 slogan
+      // 底部：右下角小程序码（FR-11）+ 扫码提示
+      if (qrImg) {
+        const qrSize = 60;
+        const qrX = w - qrSize - 14;
+        const qrY = h - qrSize - 18;
+        try {
+          ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+        } catch (_) {
+          // 贴码失败不影响海报其余内容
+        }
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "9px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("扫码来练", qrX + qrSize / 2, qrY + qrSize + 12);
+        // 右下角被码占用 → 标语左对齐缩小避让，避免文字压在小程序码上
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "10px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText("对着手机说 3 分钟，60 秒拿到能力雷达图", 16, h - 30);
+        return;
+      }
       ctx.fillStyle = "#9ca3af";
       ctx.font = "12px sans-serif";
       ctx.textAlign = "center";

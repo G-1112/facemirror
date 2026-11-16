@@ -104,6 +104,11 @@ function loadComponent(opts) {
   let compConfig = null;
   const requireStub = (request) => {
     if (request === "../../utils/nav-guard") return loadGuard();
+    // FR-11 小程序码：海报保存会先调 getWxacode 取码；桩固定返回 ok:false
+    // → loadQrImage 走降级分支（无码海报），本测试聚焦保存/解锁路径不受影响
+    if (request === "../../utils/api") {
+      return { call: async () => ({ ok: false }) };
+    }
     throw new Error("测试未预置的模块：" + request);
   };
 

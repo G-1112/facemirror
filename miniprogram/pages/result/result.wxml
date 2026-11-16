@@ -125,7 +125,7 @@
          改为绑定一个真实的空实现函数 noop —— catch 语义照常阻止冒泡，
          点弹层内部不会误触发遮罩的关闭。 -->
     <view class="poster-modal" catchtap="noop">
-      <share-poster score="{{report.totalScore}}" radar="{{radarData}}" labels="{{radarLabels}}" />
+      <share-poster score="{{report.totalScore}}" radar="{{radarData}}" labels="{{radarLabels}}" record-id="{{recordId}}" />
       <view class="close-btn" bindtap="onHidePoster">关闭</view>
     </view>
   </view>
