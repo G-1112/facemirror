@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "题库抽题 · 评分结果",
   "usingComponents": {
-    "radar-chart": "/components/radar-chart/radar-chart"
+    "radar-chart": "/components/radar-chart/radar-chart",
+    "share-poster": "/components/share-poster/share-poster"
   }
 }

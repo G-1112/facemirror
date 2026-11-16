@@ -72,6 +72,18 @@
       </view>
     </view>
 
-    <button class="btn-primary again-btn" bindtap="onBackHome" hover-class="btn-hover">再练一轮</button>
+    <!-- 操作 -->
+    <view class="action-row">
+      <button class="btn-primary" bindtap="onShowPoster" hover-class="btn-hover">生成分享海报</button>
+      <button class="btn-primary again-btn" bindtap="onBackHome" hover-class="btn-hover">再练一轮</button>
+    </view>
   </block>
+
+  <!-- 分享海报弹层（接线同 pages/result：遮罩关闭 + catchtap 防冒泡） -->
+  <view wx:if="{{showPoster}}" class="poster-mask" bindtap="onHidePoster">
+    <view class="poster-modal" catchtap="noop">
+      <share-poster score="{{view.totalScore}}" radar="{{view.radar}}" labels="{{view.labels}}" record-id="{{recordId}}" />
+      <view class="close-btn" bindtap="onHidePoster">关闭</view>
+    </view>
+  </view>
 </view>

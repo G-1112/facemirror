@@ -58,6 +58,8 @@ Page({
     errorMsg: "",
     view: null as ReturnType<typeof toReportView>,
     recordId: "",
+    // 分享海报弹层（2026-11-17 新增：题库抽题结果页此前没有海报入口，海报组件只挂在练习模式结果页）
+    showPoster: false,
   },
 
   alive: true,
@@ -101,5 +103,19 @@ Page({
   /** 回首页再练一轮 */
   onBackHome() {
     wx.reLaunch({ url: "/pages/index/index" });
+  },
+
+  // ── 分享海报（与练习模式结果页 pages/result 同款接线）──
+  onShowPoster() {
+    this.setData({ showPoster: true });
+  },
+
+  onHidePoster() {
+    this.setData({ showPoster: false });
+  },
+
+  /** 空实现：用于 catchtap="noop"，阻止海报弹层内部点击冒泡到遮罩（同 result.ts 注释口径） */
+  noop() {
+    // 无操作
   },
 });
