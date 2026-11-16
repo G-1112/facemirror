@@ -140,7 +140,11 @@ exports.main = async (event) => {
   }
 
   if (!text.trim()) return { error: "材料内容为空" };
-  text = text.slice(0, 4000); // 控制长度
+  // 4000→20000（2026-11-16）：与 parseResume 上限对齐；超长不再静默，console 留痕
+  if (text.length > 20000) {
+    console.warn("材料超长，已截取前 20000 字参与出题:", fileID, text.length);
+    text = text.slice(0, 20000);
+  }
 
   // 5) 内容安全（第十一轮审查 B-12）：材料是 UGC，落 LLM 链路前必须过检，
   //    与 README/作品说明文档中「用户上传材料过 msgSecCheck」的声明对齐。

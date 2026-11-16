@@ -9,8 +9,10 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV });
 
 /** 服务端真实可解析的格式白名单（与前端 chooseMessageFile 的 extension 保持一致） */
 const ALLOWED_EXT_RE = /\.(txt|md|docx|pdf)$/i;
-/** 简历文本上限：超长截断，避免 token 爆炸与费用失控 */
-const MAX_RESUME_CHARS = 6000;
+/** 简历文本上限：超长截断。6000→20000（2026-11-16 真机实测：用户完整简历超 6000 被
+ *  截断丢项目经历；20000 字 ≈ 30+ 页，真实简历不可能触达，仅防异常文件打爆
+ *  LLM 上下文与费用，保留防御性闸门而非完全取消） */
+const MAX_RESUME_CHARS = 20000;
 
 const PARSE_SYSTEM = `你是一个资深简历解析器。请把候选人简历解析成严格的 JSON。
 
