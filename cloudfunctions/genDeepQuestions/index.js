@@ -22,6 +22,23 @@ const DIMENSION_KEYS = [
 const TYPE_KEYS = ["project", "technical", "business", "scenario", "behavior"];
 const DIFFICULTIES = ["简单", "中等", "困难"];
 
+/**
+ * LLM 输出字符清洗（与 analyzeJob/index.js 同款副本，云函数不能跨目录 require）：
+ * DeepSeek 偶发夹带 emoji / 特殊符号，小程序端字体缺字形渲染成「�◆◆」豆腐块 → 归一化时统一剥离。
+ * 保留：CJK、ASCII、CJK 标点、①②③ 等带圈序号、常规全角标点。
+ */
+const RE_EMOJI = /\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDC00-\uDFFF]/g;
+const RE_SYMBOL = /[\u2190-\u21FF\u2300-\u23FF\u2500-\u25FF\u2600-\u27BF\u2900-\u297F\u2B00-\u2BFF\u3000-\u3005\uFE0F\u200D\u20E3\uE000-\uF8FF]/g;
+const RE_CTRL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFD]/g;
+function sanitizeLlmText(s) {
+  return String(s == null ? "" : s)
+    .replace(RE_EMOJI, "")
+    .replace(RE_SYMBOL, "")
+    .replace(RE_CTRL, "")
+    .replace(/[\uD800-\uDFFF]/g, "") // 清洗后残留的孤立代理对
+    .trim();
+}
+
 const GEN_SYSTEM = `你是一位严格的技术面试官，正在基于候选人的**简历**和**目标岗位**出面试题。
 
 要求：
@@ -176,24 +193,29 @@ function templateQuestions(resume) {
   return out;
 }
 
-/** 归一化单题：字段缺失补默认、类型白名单过滤、题干去空格 */
+/** 归一化单题：字段缺失补默认、类型白名单过滤、题干去空格、剥离 emoji/特殊符号 */
 function normalizeQuestion(q, index, fallbackEvidence) {
   if (!q || typeof q !== "object") return null;
-  const question = typeof q.question === "string" ? q.question.trim() : "";
+  const question = typeof q.question === "string" ? sanitizeLlmText(q.question) : "";
   if (!question) return null;
-  const strArr = (v) => (Array.isArray(v) ? v.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()) : []);
+  const strArr = (v) =>
+    Array.isArray(v)
+      ? v
+          .filter((x) => typeof x === "string" && x.trim())
+          .map((x) => sanitizeLlmText(x))
+          .filter((x) => x)
+      : [];
   const type = TYPE_KEYS.indexOf(q.type) >= 0 ? q.type : "project";
   const difficulty = DIFFICULTIES.indexOf(q.difficulty) >= 0 ? q.difficulty : "中等";
   const competency = DIMENSION_KEYS.indexOf(q.competency) >= 0 ? q.competency : "technicalDepth";
-  const evidence =
-    typeof q.evidence === "string" && q.evidence.trim() ? q.evidence.trim() : fallbackEvidence || "简历内容";
+  const evidence = typeof q.evidence === "string" ? sanitizeLlmText(q.evidence) : "";
   return {
     id: `q${index + 1}`,
     question,
     type,
     difficulty,
     competency,
-    evidence,
+    evidence: evidence || fallbackEvidence || "简历内容",
     followups: strArr(q.followups).slice(0, 3),
     keyPoints: strArr(q.keyPoints).slice(0, 5),
     estimatedSec: 120,

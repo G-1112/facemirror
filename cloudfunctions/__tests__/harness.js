@@ -172,7 +172,10 @@ function loadFunction(fnName, opts = {}) {
     // 模拟「集合未创建」：测试里 state.missingCollections.add("interviews")
     missingCollections: new Set(),
     // npm 依赖桩：state.modules["pdf-parse"] = async (buf) => ({ text: "..." })
-    modules: {},
+    //   顶层 require 的模块（如 ./llm）必须在 loadFunction 前预置：
+    //   loadFunction(fnName, { OPENID, modules: { "./llm": { callLLM: async () => "..." } } })
+    //   —— 加载后再补 state.modules 对顶层 require 无效（模块已被真实实现缓存）。
+    modules: opts.modules || {},
   };
 
   const dbCommand = {

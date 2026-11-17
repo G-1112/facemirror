@@ -15,6 +15,23 @@ const DIMENSION_KEYS = [
   "communication",
 ];
 
+/**
+ * LLM 输出字符清洗（2026-11-17）：DeepSeek 偶发夹带 emoji / 特殊符号，
+ * 小程序端字体缺字形会渲染成「�◆◆」豆腐块 → 在归一化处统一剥离。
+ * 保留：CJK、ASCII、CJK 标点、①②③ 等带圈序号、常规全角标点。
+ */
+const RE_EMOJI = /\uD83C[\uDF00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|\uD83E[\uDC00-\uDFFF]/g;
+const RE_SYMBOL = /[\u2190-\u21FF\u2300-\u23FF\u2500-\u25FF\u2600-\u27BF\u2900-\u297F\u2B00-\u2BFF\u3000-\u3005\uFE0F\u200D\u20E3\uE000-\uF8FF]/g;
+const RE_CTRL = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\uFFFD]/g;
+function sanitizeLlmText(s) {
+  return String(s == null ? "" : s)
+    .replace(RE_EMOJI, "")
+    .replace(RE_SYMBOL, "")
+    .replace(RE_CTRL, "")
+    .replace(/[\uD800-\uDFFF]/g, "") // 清洗后残留的孤立代理对
+    .trim();
+}
+
 const JOB_SYSTEM = `你是一位资深技术面试官。根据目标岗位，推导该岗位的核心能力要求与考察维度。
 
 要求：
@@ -124,27 +141,30 @@ exports.main = async (event) => {
       const c = byKey[k];
       if (!c) return fallback.competencies[i];
       const weight = Number(c.weight);
+      const name = typeof c.name === "string" ? sanitizeLlmText(c.name) : "";
+      const expectedLevel = typeof c.expectedLevel === "string" ? sanitizeLlmText(c.expectedLevel) : "";
       return {
         key: k,
-        name: typeof c.name === "string" && c.name ? c.name : fallback.competencies[i].name,
+        name: name || fallback.competencies[i].name,
         weight: isFinite(weight) && weight > 0 ? Math.min(1, weight) : fallback.competencies[i].weight,
         focusPoints: Array.isArray(c.focusPoints)
-          ? c.focusPoints.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()).slice(0, 6)
+          ? c.focusPoints
+              .filter((x) => typeof x === "string" && x.trim())
+              .map((x) => sanitizeLlmText(x))
+              .filter((x) => x)
+              .slice(0, 6)
           : fallback.competencies[i].focusPoints,
-        expectedLevel:
-          typeof c.expectedLevel === "string" && c.expectedLevel.trim()
-            ? c.expectedLevel.trim()
-            : fallback.competencies[i].expectedLevel,
+        expectedLevel: expectedLevel || fallback.competencies[i].expectedLevel,
       };
     });
     competency = {
-      role: typeof parsed.role === "string" && parsed.role ? parsed.role : role,
-      level: typeof parsed.level === "string" ? parsed.level : level,
-      industry: typeof parsed.industry === "string" ? parsed.industry : industry,
-      interviewerStyle:
-        typeof parsed.interviewerStyle === "string" && parsed.interviewerStyle.trim()
-          ? parsed.interviewerStyle.trim()
-          : fallback.interviewerStyle,
+      role: typeof parsed.role === "string" && parsed.role.trim() ? sanitizeLlmText(parsed.role) || role : role,
+      level: typeof parsed.level === "string" ? sanitizeLlmText(parsed.level) : level,
+      industry: typeof parsed.industry === "string" ? sanitizeLlmText(parsed.industry) : industry,
+      interviewerStyle: (() => {
+        const s = typeof parsed.interviewerStyle === "string" ? sanitizeLlmText(parsed.interviewerStyle) : "";
+        return s || fallback.interviewerStyle;
+      })(),
       competencies,
     };
   } catch (e) {
@@ -154,3 +174,5 @@ exports.main = async (event) => {
 
   return { competency };
 };
+
+exports.sanitizeLlmText = sanitizeLlmText;
